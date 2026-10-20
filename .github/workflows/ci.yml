@@ -1,0 +1,26 @@
+name: validate
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -B scripts/check_public_files.py
+      - run: pip install -c backend/constraints-py312.txt -r backend/requirements.txt
+      - run: python -B scripts/test_offline.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci && npm run build
+        working-directory: frontend
+      - run: docker compose config --quiet
+      - run: docker compose build
+      - run: docker compose up -d --wait --wait-timeout 180
+      - run: curl --fail http://127.0.0.1:3000/api/commerce/overview
+      - if: always()
+        run: docker compose logs && docker compose down -v

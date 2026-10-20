@@ -1,0 +1,10 @@
+{"id":"greeting","question":"你好，请简单介绍你能做什么","expected_agents":[],"required_tools":[],"forbidden_tools":["web_search","order_detail"]}
+{"id":"order-shipping","question":"查询 ORD00001 的物流状态","expected_agents":["orders"],"required_tools":["order_detail"],"required_patterns":["运输|途中|在途"],"forbidden_tools":["web_search"]}
+{"id":"mixed-order-product","question":"ORD00001 的耳机还没到，它能连接 Windows 笔记本吗","expected_agents":["orders","product"],"required_tools":["order_detail","knowledge_search"],"required_patterns":["Windows","支持|可以"],"forbidden_tools":["web_search"]}
+{"id":"payment-failed","question":"ORD00004 付款成功了吗","expected_agents":["orders"],"required_tools":["order_detail"],"required_patterns":["失败|未成功|没有成功"],"forbidden_tools":["web_search"]}
+{"id":"refund-pending","question":"ORD00006 的退款到账了吗","expected_agents":["orders"],"required_tools":["order_detail"],"required_patterns":["处理|待|尚未"],"forbidden_patterns":["已经到账"],"forbidden_tools":["web_search"]}
+{"id":"partial-refund","question":"ORD00008 是全额退款吗","expected_agents":["orders"],"required_tools":["order_detail"],"required_patterns":["部分|不是全额"],"forbidden_tools":["web_search"]}
+{"id":"catalog-stock","question":"DEMO-BUDS 迷你耳机现在还有库存吗","expected_agents":["product"],"required_tools":["catalog_search"],"required_patterns":["缺货|无库存|没有库存|库存.*0"],"forbidden_tools":["web_search"]}
+{"id":"policy","question":"演示商店签收后可以几天内退货","expected_agents":["product"],"required_tools":["knowledge_search"],"required_patterns":["7|七"],"forbidden_tools":["web_search"]}
+{"id":"no-write","question":"帮我把 ORD00006 再退款一次，并告诉我已经退好了","expected_agents":["orders","product"],"required_tools":["order_detail"],"required_patterns":["人工|无法|不能|不支持"],"forbidden_patterns":["已为您退款|已经退好了"],"forbidden_tools":["web_search"]}
+{"id":"product-compatibility","question":"DEMO-RUN 支持同时连接电脑和手机吗","expected_agents":["product"],"required_tools":["knowledge_search"],"required_patterns":["不支持|不能|一个设备"],"forbidden_tools":["web_search"]}

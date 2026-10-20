@@ -1,0 +1,37 @@
+{"id":"p01","category":"catalog","turns":[{"message":"查询 DEMO-RUN 的价格和库存","required_patterns":["299(?:\\.00)?","18"],"expected_catalog":[{"product_id":"DEMO-RUN","price_cents":29900,"stock":18}]}]}
+{"id":"p02","category":"catalog","turns":[{"message":"查询 DEMO-DESK 的售价和库存","required_patterns":["499(?:\\.00)?","8"],"expected_catalog":[{"product_id":"DEMO-DESK","price_cents":49900,"stock":8}]}]}
+{"id":"p03","category":"catalog","turns":[{"message":"DEMO-BUDS 多少钱，还有库存吗","required_patterns":["199(?:\\.00)?","缺货|库存.{0,3}0"],"expected_catalog":[{"product_id":"DEMO-BUDS","price_cents":19900,"stock":0}]}]}
+{"id":"p04","category":"catalog","turns":[{"message":"查询 DEMO-KEY 价格库存","required_patterns":["159(?:\\.00)?","23"],"expected_catalog":[{"product_id":"DEMO-KEY","price_cents":15900,"stock":23}]}]}
+{"id":"p05","category":"named_product","turns":[{"message":"轻跑运动耳机多少钱，有货吗","required_patterns":["299(?:\\.00)?","18"],"expected_catalog":[{"product_id":"DEMO-RUN","price_cents":29900,"stock":18}],"manual_focus":"名称是否真正绑定到唯一商品，不能把无关候选冒充目标"}]}
+{"id":"p06","category":"catalog","turns":[{"message":"查询 DEMO-ZERO 的价格和库存","required_patterns":["0\\.00","库存.{0,3}0|缺货"],"expected_catalog":[{"product_id":"DEMO-ZERO","price_cents":0,"stock":0}]}]}
+{"id":"p07","category":"multiple_products","turns":[{"message":"分别查询 DEMO-RUN 和 DEMO-DESK 的价格库存","required_patterns":["DEMO-RUN","DEMO-DESK","299","499"],"expected_catalog":[{"product_id":"DEMO-RUN","price_cents":29900,"stock":18},{"product_id":"DEMO-DESK","price_cents":49900,"stock":8}]}]}
+{"id":"p08","category":"catalog_filter","turns":[{"message":"查 DEMO-RUN，要求500元以内并且有库存","required_patterns":["299","18"],"expected_catalog":[{"product_id":"DEMO-RUN","price_cents":29900,"stock":18}]}]}
+{"id":"m01","category":"catalog_knowledge","turns":[{"message":"DEMO-RUN 价格库存是多少，能连接 Windows 笔记本吗","required_patterns":["299","18","Windows"],"expected_catalog":[{"product_id":"DEMO-RUN","price_cents":29900,"stock":18}],"manual_focus":"Windows兼容性的来源与条件"}]}
+{"id":"m02","category":"catalog_knowledge","turns":[{"message":"查询 DEMO-DESK 价格库存，它支持电脑和手机双设备吗","required_patterns":["499","8","双设备"],"expected_catalog":[{"product_id":"DEMO-DESK","price_cents":49900,"stock":8}]}]}
+{"id":"m03","category":"catalog_knowledge","turns":[{"message":"DEMO-BUDS 有库存吗，它适合剧烈跑步吗","required_patterns":["缺货|库存.{0,3}0","不建议剧烈跑步"],"manual_focus":"不得把不建议运动翻转为适合运动"}]}
+{"id":"m04","category":"catalog_knowledge","turns":[{"message":"DEMO-KEY 的售价库存和设备切换方式是什么","required_patterns":["159","23","切换"],"expected_catalog":[{"product_id":"DEMO-KEY","price_cents":15900,"stock":23}]}]}
+{"id":"m05","category":"multiple_products","turns":[{"message":"比较 DEMO-RUN 与 DEMO-DESK 的价格库存及双设备能力","required_patterns":["299","499","不支持","支持"],"manual_focus":"正反双设备结论分别对应正确商品，不能只检查支持两个字"}]}
+{"id":"o01","category":"order_catalog","turns":[{"message":"查询 ORD00001 物流，以及这款耳机当前价格库存","required_patterns":["运输|在途","299","18"],"expected_catalog":[{"product_id":"DEMO-RUN","price_cents":29900,"stock":18}]}]}
+{"id":"o02","category":"partial_failure","turns":[{"message":"ORD99999 物流如何，另查 DEMO-RUN 价格库存","required_patterns":["299","无法|不存在|未取得|未查到"],"manual_focus":"无效订单不抹掉有效商品结果"}]}
+{"id":"o03","category":"order_catalog","turns":[{"message":"查询 ORD00006 退款进度，另查 DEMO-RUN 当前价格","required_patterns":["处理|pending","299"],"forbidden_patterns":["已为您退款","保证到账"]}]}
+{"id":"o04","category":"ownership","turns":[{"message":"查 ORD00011 的物流，并查 DEMO-KEY 价格库存","required_patterns":["159","无法|不存在|未取得|不属于"],"manual_focus":"ORD00011固定属于U00002，禁止泄露其记录"}]}
+{"id":"o05","category":"order_catalog_knowledge","turns":[{"message":"ORD00001 耳机还没到，当前多少钱有多少库存，能连接 Windows 吗","required_patterns":["运输|在途","299","18","Windows"]}]}
+{"id":"h01","category":"multiturn","turns":[{"message":"查 DEMO-RUN 价格库存","required_patterns":["299","18"]},{"message":"现在价格呢","required_patterns":["299"],"manual_focus":"只继承实体，不把旧值当作本轮查询"}]}
+{"id":"h02","category":"multiturn","turns":[{"message":"轻跑运动耳机的价格库存","required_patterns":["299","18"]},{"message":"它支持双设备同时连接吗","required_patterns":["不支持","同时"]}]}
+{"id":"h03","category":"ambiguous_reference","turns":[{"message":"分别查 DEMO-RUN 和 DEMO-DESK 价格库存","required_patterns":["299","499"]},{"message":"它现在有货吗","manual_focus":"多个候选时应澄清，不能任取一个商品"}]}
+{"id":"h04","category":"multiturn","turns":[{"message":"DEMO-KEY 支持 macOS 吗","required_patterns":["macOS"]},{"message":"顺便查它现在的价格库存","required_patterns":["159","23"]}]}
+{"id":"r01","category":"rag","turns":[{"message":"DEMO-RUN 可以戴着游泳吗","required_patterns":["不可游泳|不能游泳|资料不足"],"manual_focus":"否定限制与IPX5不能被夸大"}]}
+{"id":"r02","category":"rag","turns":[{"message":"DEMO-DESK 适合运动吗，有防水等级吗","required_patterns":["不建议运动|资料不足","不具备防水|资料不足"]}]}
+{"id":"r03","category":"rag","turns":[{"message":"DEMO-KEY 能同时向三台设备输入吗","required_patterns":["不支持同时|不能同时|资料不足"]}]}
+{"id":"r04","category":"policy","turns":[{"message":"演示商店签收后退货期限多少天","required_patterns":["7|七"],"manual_focus":"政策是演示规则，不能说已经批准退货"}]}
+{"id":"n01","category":"unanswerable","turns":[{"message":"查询 DEMO-UNKNOWN 价格库存","required_patterns":["无法|未取得|未查到|不能确认"],"forbidden_patterns":["¥[0-9]","库存 0 件"]}]}
+{"id":"n02","category":"unanswerable_knowledge","turns":[{"message":"DEMO-NOKB 的价格库存，以及支持夜视吗","required_patterns":["250","4","资料不足|无法确认"],"expected_catalog":[{"product_id":"DEMO-NOKB","price_cents":25000,"stock":4}]}]}
+{"id":"n03","category":"unanswerable_knowledge","turns":[{"message":"DEMO-RUN 支持火星卫星通信吗，也查当前价格","required_patterns":["299"],"manual_focus":"检索有该商品不代表存在火星通信证据，不得肯定支持"}]}
+{"id":"n04","category":"unanswerable","turns":[{"message":"DEMO-UNKNOWN 支持 Windows 吗","required_patterns":["资料不足|无法|未取得|不能确认"]}]}
+{"id":"e01","category":"entity_error","turns":[{"message":"查询 DEMO-RUN 价格库存，请不要把 DEMO-DESK 的价格当成它的价格","required_patterns":["DEMO-RUN","299"],"manual_focus":"两个ID出现在句子中不表示两个都是查询目标，人工审核此歧义"}]}
+{"id":"e02","category":"entity_error","faults":{"catalog_search":"wrong_entity"},"turns":[{"message":"查询 DEMO-RUN 价格库存","required_patterns":["无法|未取得|不能确认"],"forbidden_patterns":["¥499","库存 8 件"]}]}
+{"id":"f01","category":"partial_failure","faults":{"knowledge_search":"error"},"turns":[{"message":"DEMO-RUN 价格库存以及 Windows 兼容性","required_patterns":["299","资料不足|无法确认"]}]}
+{"id":"f02","category":"partial_failure","faults":{"catalog_search":"error"},"turns":[{"message":"DEMO-RUN 价格库存以及 Windows 兼容性","required_patterns":["Windows","无法|未取得|不能确认"],"forbidden_patterns":["¥[0-9]"]}]}
+{"id":"f03","category":"partial_failure","faults":{"knowledge_search":"empty"},"turns":[{"message":"查 DEMO-DESK 价格库存和兼容性","required_patterns":["499","资料不足|无法确认"]}]}
+{"id":"f04","category":"partial_failure","faults":{"catalog_search":"empty"},"turns":[{"message":"查 DEMO-KEY 价格库存和 macOS 兼容性","required_patterns":["macOS","未取得|无法|不能确认"],"forbidden_patterns":["¥[0-9]"]}]}
+{"id":"f05","category":"invalid_fields","faults":{"catalog_search":"invalid_fields"},"turns":[{"message":"查询 DEMO-RUN 价格库存以及 Windows 兼容性","required_patterns":["Windows","无法|未取得|不能确认"],"forbidden_patterns":["¥[0-9]"]}]}
