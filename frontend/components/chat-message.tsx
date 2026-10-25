@@ -30,7 +30,7 @@ export type Message = {
 };
 
 const agentLabels: Record<string, string> = {
-  supervisor: "客服协调", orders: "订单客服", product: "商品顾问", research: "资讯查询",
+  supervisor: "客服协调", orders: "订单客服", product: "商品顾问",
 };
 const eventLabels: Record<string, string> = {
   completed: "已返回", partial: "部分完成", failed: "遇到问题", limit: "达到执行上限",
@@ -38,7 +38,7 @@ const eventLabels: Record<string, string> = {
 
 const toolLabels: Record<string, string> = {
   list_orders: "我的订单", order_detail: "订单详情", catalog_search: "商品价格库存", knowledge_search: "商品知识检索",
-  web_search: "联网搜索", calculator: "计算器", current_time: "时间查询",
+  calculator: "计算器", current_time: "时间查询",
   memory_set: "保存记忆", memory_list: "读取记忆", memory_delete: "删除记忆",
 };
 
