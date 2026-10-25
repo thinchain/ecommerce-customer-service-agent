@@ -2,18 +2,16 @@
 
 ## 运行结构
 
-图的入口包含可选 Jev 决策节点（默认关闭），末尾包含确定性引用 ID 校验。协调 Agent（supervisor）理解任务、管理显式记忆、委派并汇总；三个专业 Agent 拥有独立提示词和上下文、工具白名单及 LangGraph ReAct 子图。它们共享现有 Qwen/vLLM 模型服务，并不要求加载四份模型。
+图的入口包含可选 Jev 决策节点（默认关闭），末尾包含确定性引用 ID 校验。协调 Agent（supervisor）理解任务、管理显式记忆、委派并汇总；两个专业 Agent 拥有独立提示词和上下文、工具白名单及 LangGraph ReAct 子图。它们共享现有 Qwen/vLLM 模型服务，并不要求加载三份模型。
 
 ```mermaid
 flowchart TD
   Start([用户问题]) --> Supervisor[协调 Agent]
   Supervisor -->|delegate_orders| Orders[订单 Agent 子图]
   Supervisor -->|delegate_product| Product[商品 Agent 子图]
-  Supervisor -->|delegate_research| Research[资讯 Agent 子图]
   Supervisor -->|计算/时间/显式记忆| Utility[协调工具节点]
   Orders -->|报告与工具证据| Supervisor
   Product -->|报告与工具证据| Supervisor
-  Research -->|报告与工具证据| Supervisor
   Utility --> Supervisor
   Supervisor -->|最终回答| End([保存会话])
 ```
@@ -22,10 +20,9 @@ flowchart TD
 
 | Agent | 可以执行的工具 |
 | --- | --- |
-| 协调 | delegate_orders / delegate_product / delegate_research、calculator、current_time、memory_set/list/delete |
+| 协调 | delegate_orders / delegate_product、calculator、current_time、memory_set/list/delete |
 | 订单 | list_orders、order_detail、calculator、current_time |
 | 商品 | knowledge_search、catalog_search、calculator |
-| 资讯 | web_search、current_time |
 
 工具白名单在执行时再次校验；模型伪造越权调用也不会执行。专业 Agent 不能改写会话记忆或直接调用其他 Agent。
 
@@ -42,7 +39,7 @@ flowchart TD
 
 当前按顺序委派，匹配已有 vLLM 单并发和任务依赖；同轮多个委派也按调用顺序完成，所有 tool_call 都得到配对结果后才再次调用协调模型。多 Agent 不等于并行执行。若未来增加多并发模型服务，可再对真正独立的任务实现 fan-out/fan-in。
 
-专业 Agent 不接收完整会话历史或长期记忆。资讯 Agent 只接收协调 Agent 构造的公开资讯子任务；不会自动复制订单工具结果。提示词禁止将个人/订单信息放入资讯委派，但自由文本 task 仍由模型生成，这不是完善的数据防泄漏系统。
+专业 Agent 不接收完整会话历史或长期记忆，只接收协调 Agent 构造的具体子任务。商品 Agent 可额外收到本轮订单工具返回的商品 ID 候选，不会自动复制完整订单记录。自由文本 task 仍由模型生成，应仅包含完成任务所需的信息。
 
 ## 预算、失败与持久化
 
@@ -57,7 +54,7 @@ flowchart TD
 
 本版**没有配置 LangGraph checkpointer**，图状态仅属于当前请求；用户对话与显式记忆仍由既有 SQLite 事务持久化。进程重启后可以继续对话，但不会恢复执行到一半的图。后续若做人工审批和跨进程继续执行，应再加入 SQLite/Postgres checkpointer、独立 run_id、恢复接口及幂等动作，而不能把一次会话 UUID 直接当成所有运行的恢复凭据。
 
-历史中保留原始回答、工具记录与协作事件；注入模型时附加历史执行摘要。所有工具失败，或无工具证据且专业委派全部失败时，使用中性历史说明代替旧失败文案，防止把旧故障当当前状态。
+历史中保留原始回答、工具记录与协作事件。常规模型上下文按预算选取获准的完整问答对，保留原始回答；范围校验拒绝的轮次不回放。执行状态用于会话记录和专业子图交接。
 
 ## MCP 与接口兼容
 

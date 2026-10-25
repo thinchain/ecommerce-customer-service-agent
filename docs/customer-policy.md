@@ -19,7 +19,7 @@ Shell、任意程序执行、文件修改或交易执行能力。回复亦检查
 `JEV_SCOPE_ENABLED=true` 启用独立的 Kev 服务范围判断，五个选项：
 customer_service / conversation_recall / unrelated / dangerous / unclear。
 customer_service 进入常规客服流程；conversation_recall 进入只读会话回顾，
-Qwen 只能读取当前身份会话记录，没有业务、搜索或记忆修改工具。
+Qwen 只能读取当前身份会话记录，没有业务查询或记忆修改工具。
 其他结果使用固定拒绝或澄清回复。
 混合客服和无关任务整体拒绝，要求用户单独提出客服问题。
 服务出错或无有效结果时暂时拒绝，防止降级为通用聊天。

@@ -28,7 +28,7 @@ messages = model_messages([
 
 ## 配置与覆盖
 
-`Settings` 使用 `pydantic-settings`，保留 `.env.example` 中现有环境变量名，按模型、Agent、存储、检索、搜索和 Jev 分组定义字段。加载优先级为显式参数、进程环境、根目录 `.env`、默认值。部署脚本使用的其他 `.env` 字段被忽略。
+`Settings` 使用 `pydantic-settings`，保留 `.env.example` 中现有环境变量名，按模型、Agent、存储、检索和 Jev 分组定义字段。加载优先级为显式参数、进程环境、根目录 `.env`、默认值。部署脚本使用的其他 `.env` 字段被忽略。
 
 ```python
 from app.core import Settings, get_settings, override_settings
@@ -42,6 +42,8 @@ with override_settings(agent_max_steps=2, jev_scope_enabled=False):
 ```
 
 配置为不可变对象，超限、非法枚举、非有限超时及不完整 Chroma 配置会在加载时失败，不再静默截断。密钥使用 `SecretStr`，日志/JSON 默认脱敏。FastAPI 启动时验证配置；修改环境配置后需重启服务。
+
+`DATA_DIR` 统一设置数据根目录，默认是项目内的 `data/`。未单独配置的业务、知识、会话数据库与 Chroma 目录均从它派生；`COMMERCE_DB_PATH`、`KNOWLEDGE_DB_PATH`、`MEMORY_DB_PATH`、`CHROMA_PATH` 可分别覆盖。存储路径支持用户目录展开，相对路径统一以项目根目录为基准。数据构建和检索评测脚本默认使用 `DATA_DIR/portfolio`，命令行路径参数仍可覆盖。个人绝对路径只填写到忽略上传的 `.env`。
 
 新增环境变量：`MODEL_TEMPERATURE`、`MODEL_MAX_TOKENS`、`AGENT_MAX_HISTORY_TURNS`、`AGENT_HANDOFF_REPORT_BYTES`、`AGENT_MAX_CALLS_PER_RESPONSE`。默认值沿用原有设置。
 

@@ -69,7 +69,7 @@ Mock 模型和 Mock `/models` 响应；这不是一次真实 Qwen 测试。临�
 权重未被同名替换。需另记录实际权重、vLLM 启动参数、GPU 和负载，并在实验期间保持稳定。
 
 A/B 为同一源码的开关对照：legacy=false，evidence=true；不是旧 commit 二进制复现。
-两组同 endpoint/model/temperature/max_tokens/预算，关闭 Kev 与联网，使用 FTS、本地工具。
+两组同 endpoint/model/temperature/max_tokens/预算，关闭 Kev，使用 FTS、本地工具。
 按 episode 交错 AB/BA，默认3次重复、串行执行；每组每案例每次重复独立数据库副本和 UUID。
 同 episode 多轮共享自己的会话。模型客户端／熔断在 episode 边界重置。
 工具故障通过固定标记注入，两个版本一致，不修改数据库；真实模型仍负责选择和调用工具。

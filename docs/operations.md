@@ -2,7 +2,7 @@
 
 ## 数据初始化
 
-从工程根目录运行，输出到新的 data/portfolio；已有数据不删除。构建后在自己的 `.env` 中配置业务/知识路径。
+从工程根目录运行，默认输出到 `DATA_DIR/portfolio`（未配置时为项目内的 `data/portfolio`）；已有数据不删除。构建后在自己的 `.env` 中配置业务/知识路径。
 
 ```bash
 .venv/bin/python -m pip install -r backend/requirements-dev.txt
@@ -15,8 +15,9 @@ PYTHONPATH=backend:. .venv/bin/python scripts/build_dataset.py --public data/pub
 需要配置：
 
 ```dotenv
-COMMERCE_DB_PATH=/绝对路径/data/portfolio/commerce.sqlite3
-KNOWLEDGE_DB_PATH=/绝对路径/data/portfolio/knowledge.sqlite3
+# 以下为默认 DATA_DIR=data 时的示例；使用私有目录时仅修改本地 .env。
+COMMERCE_DB_PATH=data/portfolio/commerce.sqlite3
+KNOWLEDGE_DB_PATH=data/portfolio/knowledge.sqlite3
 ```
 
 会话数据默认仍使用原 MEMORY_DB_PATH，不擅自清除历史。Docker 将会话放在同一个持久卷下的 portfolio/memory.sqlite3。
@@ -41,7 +42,7 @@ docker compose run --rm --no-deps seed python scripts/build_dataset.py --output 
 
 前端以非 root 用户运行 Next standalone；API 同样非 root。镜像与 CI 使用 backend/constraints-py312.txt 固定已验证的 Python 3.12 依赖版本。镜像不包含 `.env`、本机数据、node_modules 或模型权重。API/metrics 仅在 Compose 内部网络，Web 映射127.0.0.1:3000。Prometheus 可选，映射本机9090。没有登录系统，不应直接暴露公网。
 
-模型服务独立部署，设置 `DOCKER_MODEL_BASE_URL` 为容器可访问的 OpenAI 兼容服务 `/v1` 地址。默认 host.docker.internal 在 Linux 用 host-gateway；**宿主机模型仅绑定127.0.0.1时，桥接容器通常无法访问**，需通过受控网卡地址提供服务或专门的内部模型容器，并用防火墙限制访问。容器内127.0.0.1不是宿主机。代理使用独立 DOCKER_WEB_SEARCH_PROXY，不继承本机 `.env` 的 localhost:10809。
+模型服务独立部署，设置 `DOCKER_MODEL_BASE_URL` 为容器可访问的 OpenAI 兼容服务 `/v1` 地址。默认 host.docker.internal 在 Linux 用 host-gateway；**宿主机模型仅绑定127.0.0.1时，桥接容器通常无法访问**，需通过受控网卡地址提供服务或专门的内部模型容器，并用防火墙限制访问。容器内127.0.0.1不是宿主机。
 
 Compose 等待初始化任务成功及 API liveness 后启动网页；模型未就绪时仍可浏览商品，但 readiness 返回503，聊天会明确失败。重启策略只处理进程退出，不等于自动修复不健康服务。镜像运行需在有 Docker 的机器或随附 CI 上验证；配置文件和前端 standalone 构建不等于镜像已验证。
 
