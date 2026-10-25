@@ -1,4 +1,4 @@
-"""LangGraph supervisor with three separately scoped, bounded ReAct subgraphs."""
+"""LangGraph supervisor with two separately scoped, bounded ReAct subgraphs."""
 import json
 from typing import Any, TypedDict
 

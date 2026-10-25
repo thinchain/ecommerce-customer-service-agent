@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from app.commerce.store import CommerceStore
-from app.core.config import PROJECT_ROOT, get_settings
+from app.core.config import get_settings
 
 PRODUCTS = [
     ('DEMO-RUN', '轻跑运动耳机', 'Demo Audio', 29900, 18),
@@ -61,7 +61,7 @@ def generate(path=None, users=10, orders=40, seed=42, as_of=date(2026, 10, 2)):
                     'pending' if status == 'refund_pending' else 'succeeded', '演示售后申请'))
             if status in ('delayed', 'exception'):
                 db.execute('INSERT INTO tickets VALUES (?,?,?,?)', (f'TKT{index+1:05d}', oid, 'shipping', 'open'))
-    return {'users_requested': users, 'orders_requested': orders, 'path': str(path), 'as_of': as_of.isoformat()}
+    return {'users_requested': users, 'orders_requested': orders, 'as_of': as_of.isoformat()}
 
 
 if __name__ == '__main__':

@@ -9,6 +9,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from app.commerce.store import CommerceStore
+from app.core.config import get_settings
 from app.knowledge.store import Document, KnowledgeStore
 from scripts.generate_mock_data import PRODUCTS, SCENARIOS
 from scripts.ingest_knowledge import ingest_file
@@ -124,7 +125,7 @@ def build(output, products=320, users=1000, orders=10000, seed=42, as_of=date(20
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output',type=Path,default=ROOT/'data/portfolio')
+    parser.add_argument('--output',type=Path,default=get_settings().data_dir/'portfolio')
     parser.add_argument('--products',type=int,default=320)
     parser.add_argument('--users',type=int,default=1000)
     parser.add_argument('--orders',type=int,default=10000)

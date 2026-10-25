@@ -23,7 +23,7 @@ class ToolRuntime:
         return await self.stack.__aexit__(*args)
 
     async def execute(self, name, arguments, memories, local_executor):
-        label = name if name in BUSINESS_TOOLS or name in {'web_search','calculator','current_time','memory_set','memory_list','memory_delete'} else 'unknown'
+        label = name if name in BUSINESS_TOOLS or name in {'calculator','current_time','memory_set','memory_list','memory_delete'} else 'unknown'
         started = time.perf_counter()
         outcome = 'error'
         try:

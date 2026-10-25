@@ -1,6 +1,7 @@
 """Publication boundaries and launcher configuration, with temporary files only."""
 import contextlib
 import io
+import json
 import os
 from pathlib import Path
 import shutil
@@ -13,6 +14,40 @@ from unittest.mock import patch
 from scripts.check_public_files import ROOT, candidate_files, check, main, scan_files
 from scripts.export_public import export_public
 from scripts.model_settings import load_settings
+from tests.support import ConfiguredTestCase
+from app.core.config import override_settings
+from scripts.generate_mock_data import generate
+from scripts import check_shared_model
+
+
+class RuntimePrivacyTests(ConfiguredTestCase):
+    def test_data_generator_does_not_return_local_database_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            database = Path(directory)/'private-database.sqlite3'
+            with override_settings(COMMERCE_DB_PATH=database):
+                result = generate(users=1, orders=1)
+            self.assertTrue(database.exists())
+            self.assertEqual(result['orders_requested'], 1)
+            self.assertNotIn(directory, json.dumps(result))
+            self.assertNotIn('path', result)
+
+    def test_shared_model_probe_uses_application_settings_without_printing_them(self):
+        output = io.StringIO()
+        endpoint, key = 'http://configured-model.invalid/v1', 'probe-test-key'
+        with override_settings(OPENAI_BASE_URL=endpoint, OPENAI_API_KEY=key, QWEN_MODEL='configured-model'), \
+                patch.object(sys, 'argv', ['check_shared_model']), \
+                patch('scripts.check_shared_model.urllib.request.build_opener') as opener, \
+                contextlib.redirect_stdout(output):
+            opener.return_value.open.return_value.__enter__.return_value.read.return_value = b'{"choices":[{}]}'
+            self.assertEqual(check_shared_model.main(), 0)
+        self.assertEqual(opener.return_value.open.call_count, 2)
+        for call in opener.return_value.open.call_args_list:
+            request = call.args[0]
+            self.assertEqual(request.full_url, endpoint+'/chat/completions')
+            self.assertEqual(json.loads(request.data)['model'], 'configured-model')
+            self.assertEqual(request.get_header('Authorization'), 'Bearer '+key)
+        self.assertNotIn(endpoint, output.getvalue())
+        self.assertNotIn(key, output.getvalue())
 
 
 class PublicReleaseTests(unittest.TestCase):

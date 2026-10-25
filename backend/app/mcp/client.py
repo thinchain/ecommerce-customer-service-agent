@@ -15,7 +15,6 @@ from app.core.config import PROJECT_ROOT, Settings, get_settings
 async def connect(*, settings: Settings | None = None):
     settings = settings or get_settings()
     env = dict(os.environ)
-    env['WEB_SEARCH_PROXY'] = settings.web_search_proxy or ''
     # Explicit configuration must survive the stdio process boundary.
     for name, field in Settings.model_fields.items():
         alias = field.validation_alias

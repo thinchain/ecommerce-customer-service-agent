@@ -108,7 +108,7 @@ async def complete(messages: list[Message | dict], tools: list[dict], *, final: 
         logger.warning("Local Qwen request timed out")
         raise ModelServiceError(504, "共用模型排队或生成超时，请稍后重试；持续超时时检查模型队列及 MODEL_TIMEOUT_SECONDS 配置。") from exc
     except APIConnectionError as exc:
-        logger.warning("Could not connect to local model at %s", settings.model_base_url)
+        logger.warning("Could not connect to configured model service; check OPENAI_BASE_URL")
         raise ModelServiceError(
             502, "无法连接本地模型服务，请检查 vLLM 是否已启动及服务地址。"
         ) from exc

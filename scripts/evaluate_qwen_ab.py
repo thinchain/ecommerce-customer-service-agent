@@ -129,8 +129,6 @@ def fault_executor(faults):
             return {'ok': True, 'result': [{'product_id': 'DEMO-RUN', 'price_cents': '29900', 'stock': True}]}
         if fault is not None:
             raise ValueError('Unsupported benchmark fault')
-        if name == 'web_search':
-            return {'ok': False, 'error': 'External search disabled in this benchmark'}
         return execute_tool(name, arguments, memories)
     return execute
 

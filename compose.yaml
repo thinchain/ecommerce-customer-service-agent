@@ -18,6 +18,7 @@ x-backend: &backend
     JEV_MODEL: ${JEV_MODEL:-kev-4b}
     JEV_API_KEY: ${JEV_API_KEY:-}
     JEV_TIMEOUT_SECONDS: ${JEV_TIMEOUT_SECONDS:-3}
+    DATA_DIR: /app/data
     COMMERCE_DB_PATH: /app/data/portfolio/commerce.sqlite3
     KNOWLEDGE_DB_PATH: /app/data/portfolio/knowledge.sqlite3
     MEMORY_DB_PATH: /app/data/portfolio/memory.sqlite3
@@ -28,7 +29,6 @@ x-backend: &backend
     MODEL_RETRIES: ${MODEL_RETRIES:-1}
     COMMERCE_TOOL_TRANSPORT: ${COMMERCE_TOOL_TRANSPORT:-local}
     CATALOG_EVIDENCE_ENABLED: ${CATALOG_EVIDENCE_ENABLED:-true}
-    WEB_SEARCH_PROXY: ${DOCKER_WEB_SEARCH_PROXY:-}
 services:
   seed:
     <<: *backend

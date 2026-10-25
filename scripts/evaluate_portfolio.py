@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from app.evaluation.metrics import retrieval_scores
+from app.core.config import get_settings
 from app.knowledge.store import KnowledgeStore
 
 
@@ -50,7 +51,7 @@ def evaluate(dataset, split='test', scoped=True):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--dataset',type=Path,default=Path('data/portfolio'))
+    parser.add_argument('--dataset',type=Path,default=get_settings().data_dir/'portfolio')
     parser.add_argument('--split',choices=['dev','test'],default='test')
     parser.add_argument('--unscoped',action='store_true')
     parser.add_argument('--output',type=Path,default=Path('reports/retrieval.json'))

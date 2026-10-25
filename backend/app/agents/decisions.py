@@ -5,7 +5,7 @@ import httpx
 from app.core.config import Settings, get_settings
 
 OPTIONS = {'orders':'订单、物流、支付、退款记录', 'product':'商品知识、价格库存或商店政策',
-           'research':'外部公开资讯', 'mixed':'需要多个专业领域协作', 'chat':'普通对话或改写', 'unclear':'缺少必要信息'}
+           'mixed':'需要多个专业领域协作', 'chat':'普通对话或改写', 'unclear':'缺少必要信息'}
 
 
 def redact(text):

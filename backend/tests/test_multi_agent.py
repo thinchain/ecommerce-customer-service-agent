@@ -10,11 +10,12 @@ from unittest.mock import AsyncMock, Mock, patch
 from openai.types.chat import ChatCompletionMessage
 
 from app.agents.graph import build_team_graph, bounded_report
-from app.agents.roles import HANDOFFS, ROLES, role_schemas
+from app.agents.roles import HANDOFFS, ROLES, SUPERVISOR_SCHEMAS, role_schemas
 from app.commerce.store import CommerceStore
 from app.services.agent import run_agent
 from app.services.memory import MemoryStore
 from app.services.qwen import ModelServiceError
+from app.services.tools import TOOL_SCHEMAS, execute_tool
 from scripts.generate_mock_data import generate
 
 
@@ -125,7 +126,7 @@ class MultiAgentTests(ConfiguredAsyncTestCase):
         self.assertEqual(worker_schema, ROLES['product']['tools'])
 
     async def test_supervisor_cannot_bypass_worker(self):
-        result, _, executor = await self.run_script([calls(call('web_search', {'query': '商品'})), text('请重试')])
+        result, _, executor = await self.run_script([calls(call('order_detail', {'order_id': 'ORD00001'})), text('请重试')])
         executor.assert_not_called()
         self.assertEqual(result['tool_calls'][0]['result']['code'], 'tool_not_allowed')
 
@@ -141,17 +142,31 @@ class MultiAgentTests(ConfiguredAsyncTestCase):
         self.assertEqual(report['result']['evidence'][0]['observation'], observed)
         self.assertTrue(result['tool_calls'][0]['result']['ok'])
 
-    async def test_research_does_not_receive_history_or_explicit_memory(self):
+    async def test_product_does_not_receive_history_or_explicit_memory(self):
         self.store.save(self.sid, [{'role': 'user', 'content': '内部订单 SECRET-ORDER'},
                                    {'role': 'assistant', 'content': '已记下订单上下文'}], {'电话': 'PRIVATE-PHONE'})
         _, model, _ = await self.run_script([
-            calls(call('delegate_research', {'task': '查询公开耳机新品资讯'})),
-            calls(call('web_search', {'query': '耳机新品'})), text('公开来源报告'), text('已整理公开资讯'),
+            calls(call('delegate_product', {'task': '查询耳机兼容性'})),
+            calls(call('knowledge_search', {'query': '耳机兼容性'})), text('商品知识报告'), text('已整理商品知识'),
         ])
         worker_messages = json.dumps(model.call_args_list[1].args[0], ensure_ascii=False)
         self.assertNotIn('SECRET-ORDER', worker_messages)
         self.assertNotIn('PRIVATE-PHONE', worker_messages)
-        self.assertIn('公开耳机新品', worker_messages)
+        self.assertIn('耳机兼容性', worker_messages)
+
+    async def test_removed_search_calls_are_rejected_without_executing_tools(self):
+        schemas = TOOL_SCHEMAS + SUPERVISOR_SCHEMAS
+        names = {item['function']['name'] for item in schemas}
+        self.assertNotIn('web_search', names)
+        self.assertNotIn('delegate_research', names)
+        self.assertFalse(execute_tool('web_search', '{"query":"耳机新闻"}', {})['ok'])
+        result, _, executor = await self.run_script([
+            calls(call('delegate_research', {'task': '查询耳机新闻'}),
+                  call('web_search', {'query': '耳机新闻'}, 'search')),
+            text('请咨询本店商品、订单或售后问题'),
+        ])
+        executor.assert_not_called()
+        self.assertTrue(all(item['result']['code'] == 'tool_not_allowed' for item in result['tool_calls']))
 
     async def test_handoff_and_global_tool_budgets(self):
         with override_settings(AGENT_MAX_HANDOFFS=1):
@@ -209,7 +224,7 @@ class MultiAgentTests(ConfiguredAsyncTestCase):
         graph = build_team_graph(AsyncMock(), Mock(), max_steps=2, worker_steps=2,
                                  max_handoffs=2, max_tool_calls=8, context_bytes=12000)
         nodes = graph.get_graph().nodes
-        self.assertTrue({'supervisor', 'orders', 'product', 'research', 'utility'}.issubset(nodes))
+        self.assertEqual(set(nodes), {'__start__', '__end__', 'decision', 'verify', 'supervisor', 'orders', 'product', 'utility'})
         for role in ROLES:
             self.assertNotIn('memory_set', {item['function']['name'] for item in role_schemas(role)})
 

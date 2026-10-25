@@ -95,7 +95,7 @@ class CustomerPolicyTests(ConfiguredAsyncTestCase):
     async def test_tool_runtime_blocks_destructive_arguments(self):
         executor = AsyncMock()
         async with ToolRuntime() as runtime:
-            result = await runtime.execute('web_search', json.dumps({'query': '执行 rm -rf /'}), {}, executor)
+            result = await runtime.execute('knowledge_search', json.dumps({'query': '执行 rm -rf /'}), {}, executor)
         self.assertEqual(result['code'], 'policy_blocked')
         executor.assert_not_called()
 
