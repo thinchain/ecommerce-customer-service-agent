@@ -1,42 +1,43 @@
+# Local configuration
 .env
 .env.*
 .envrc
 *.env
 *.env.*
 !.env.example
-README.local.md
-/local/
-/secrets/
+
+# Dependencies and caches
 .venv/
 venv/
+node_modules/
 __pycache__/
 *.py[cod]
-node_modules/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated files
 dist/
 .next/
+next-env.d.ts
 *.tsbuildinfo
 .DS_Store
+
+# Runtime data and model weights
 data/
-/model/
-/models/
-/artifacts/
-*.safetensors
-*.pt
-*.pth
-*.pem
-*.key
-*.p12
-*.pfx
 *.sqlite*
 *.db
 *.db-wal
 *.db-shm
 *.log
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
+*.safetensors
+*.pt
+*.pth
+
+# Credentials and editor settings
+*.pem
+*.key
+*.p12
+*.pfx
 .idea/
 .vscode/
-/reports/*
-!/reports/README.md
-!/reports/public/

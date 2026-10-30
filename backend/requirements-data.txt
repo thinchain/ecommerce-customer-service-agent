@@ -1,3 +1,0 @@
-# Optional streaming readers for official public dataset files.
-pyarrow>=18,<24
-ijson>=3.3,<4

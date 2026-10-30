@@ -1,85 +1,67 @@
 # 电商客服 Agent
 
-基于 LangGraph、FastAPI 和 Next.js 的电商客服应用，可连接本地 Qwen / vLLM 等支持 Function Calling 的 OpenAI 兼容模型服务，结合业务数据库与知识库回答商品、订单、物流及售后政策问题。
+基于 LangGraph、FastAPI 和 Next.js 的电商客服应用，连接支持 Function Calling 的 OpenAI 兼容模型服务，通过业务数据库和知识库回答商品、订单、物流及售后政策问题。
 
-## 项目内容
+- 协调 Agent 按需委派订单、商品 Agent，按角色分配工具。
+- SQLite 提供业务查询，FTS5 / BM25 或 Chroma 提供知识检索。
+- 根据工具证据校验价格、库存和引用，由模型组织回复。
+- 支持会话历史、显式记忆、执行预算和 MCP stdio 工具调用。
 
-- **Agent 协作**：协调 Agent 按需串行委派订单、商品两个 ReAct 子图，按角色限制工具权限。
-- **业务查询与知识检索**：使用 SQLite 查询订单、价格和库存，通过 FTS5 / BM25 检索商品资料与政策，保留知识来源和引用。
-- **回答校验与表达**：服务端校验价格库存、商品绑定和引用，模型依据证据组织简洁答复；混合咨询中保留已成功查询的部分，说明缺失信息。
-- **运行支持**：提供会话记忆、执行预算、超时与有限重试，业务工具支持本地调用或 MCP stdio。
+示例使用合成数据和固定用户 `U00001`，业务工具提供只读查询。
 
-项目使用合成业务数据和固定演示用户，业务工具仅提供查询，不执行下单、支付或退款。尚未接入真实用户认证，适合本地演示与开发。
+## 本地运行
 
-## 快速开始
+需要 Python 3.12、Node.js 20.9+，以及自行部署的模型服务。
 
-需要 Python 3.12、Node.js 20.9+，以及已启动的模型服务。模型权重不包含在仓库中；使用已有服务时，应用本身不需要 GPU。
+### 后端
 
-### 1. 安装后端依赖
+在项目根目录创建虚拟环境：
 
-在项目根目录执行（以下为 Bash 命令）：
+```shell
+python -m venv .venv
+```
+
+Windows PowerShell 激活环境：
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Linux / macOS 激活环境：
 
 ```bash
-python3.12 -m venv .venv
 source .venv/bin/activate
-python -m pip install -c backend/constraints-py312.txt -r backend/requirements.txt
-cp -n .env.example .env
 ```
 
-编辑 `.env` 中的模型配置，已有配置无需覆盖：
+安装依赖，将 `.env.example` 复制为 `.env`，按实际模型服务填写 `OPENAI_BASE_URL`、`OPENAI_API_KEY` 和 `QWEN_MODEL`：
 
-```dotenv
-OPENAI_BASE_URL=http://127.0.0.1:8001/v1
-OPENAI_API_KEY=local-dev-key
-QWEN_MODEL=qwen3.5-4b
+```shell
+python -m pip install -r backend/requirements.txt
 ```
 
-地址、密钥和模型名需与实际服务一致；`local-dev-key` 是无鉴权本地服务的占位值。模型服务须启用工具调用支持；可选 Kev 服务默认关闭，无需额外部署。
+初始化示例数据并启动：
 
-### 2. 初始化数据并启动后端
-
-```bash
-PYTHONPATH=backend:. python scripts/generate_mock_data.py
-PYTHONPATH=backend:. python scripts/ingest_knowledge.py fixtures/knowledge/demo.jsonl
+```shell
+python scripts/generate_mock_data.py
+python scripts/ingest_knowledge.py fixtures/knowledge/demo.jsonl
 python backend/run.py
 ```
 
-默认启动 `127.0.0.1:8000` 并启用热重载。地址、端口可在 `.env` 中通过 `API_HOST`、`API_PORT` 配置，也可使用命令行参数覆盖，例如 `python backend/run.py --port 8080 --no-reload`。在 `backend/` 目录下可直接执行 `python run.py`。
+API 默认地址为 `http://127.0.0.1:8000`，默认启用热重载。可通过 `.env` 中的 `API_HOST`、`API_PORT` 或命令行参数调整，例如 `python backend/run.py --port 8080 --no-reload`。数据默认保存在 `data/`，可通过 `DATA_DIR` 修改。
 
-数据目录通过 `.env` 中的 `DATA_DIR` 配置，默认使用项目内的 `data/`；各数据库也可单独配置，见 `.env.example`。相对路径以项目根目录为基准，自定义私有目录请放在仓库外或加入忽略规则。
+### 前端
 
-上述命令生成小型演示数据；万级合成数据可通过 `scripts/build_dataset.py` 另外构建。
+将 `frontend/.env.example` 复制为 `frontend/.env.local`，在另一个终端执行：
 
-### 3. 启动前端
-
-在另一个终端执行：
-
-```bash
+```shell
 cd frontend
-cp -n .env.example .env.local
 npm ci
-npm run dev
+npm run dev:turbopack
 ```
 
-打开 <http://127.0.0.1:3000>，可尝试：
+打开 `http://127.0.0.1:3000`，可询问“DEMO-RUN 的价格、库存以及 Windows 兼容性”或“查询 ORD00001 的物流和商品当前价格”。后端连接地址通过 `frontend/.env.local` 中的 `FASTAPI_BASE_URL` 配置。
 
-- “DEMO-RUN 的价格、库存以及 Windows 兼容性。”
-- “查询 ORD00001 的物流和商品当前价格。”
-
-前端默认连接 `http://127.0.0.1:8000`；如需修改，在 `frontend/.env.local` 中设置 `FASTAPI_BASE_URL`。
-
-## 测试
-
-在项目根目录执行：
-
-```bash
-source .venv/bin/activate
-python -B scripts/test_offline.py
-```
-
-离线测试使用临时数据库和 Mock 模型，无需 GPU 或模型服务；测试通过不代表真实模型的回答准确率。
-
-已部署 Qwen/Kev 时，可用 `scripts/evaluate_workflow.py` 运行真实模型的多轮、记忆和低风险越界测试；运行命令与结果字段见 [真实模型评测](docs/workflow-evaluation.md)。
+模型服务、服务器部署和数据接入由使用者自行配置；可选 Kev 服务默认关闭。
 
 ## 许可证
 

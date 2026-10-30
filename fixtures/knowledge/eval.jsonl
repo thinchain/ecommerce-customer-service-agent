@@ -1,5 +1,0 @@
-{"query":"Windows 笔记本","product_id":"DEMO-RUN","expected_document_id":"demo-run"}
-{"query":"双设备连接","product_id":"DEMO-DESK","expected_document_id":"demo-desk"}
-{"query":"键盘切换设备","product_id":"DEMO-KEY","expected_document_id":"demo-key"}
-{"query":"退货退款期限","kind":"policy","expected_document_id":"demo-return-policy"}
-{"query":"运动防水","product_id":"DEMO-RUN","expected_document_id":"demo-run"}
