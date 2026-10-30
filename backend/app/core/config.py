@@ -57,25 +57,26 @@ class Settings(BaseSettings):
     agent_max_calls_per_response: int = Field(default=4, ge=1, le=16, validation_alias='AGENT_MAX_CALLS_PER_RESPONSE')
 
     # Storage / business transport
-    memory_db_path: Path = Field(default=PROJECT_ROOT / 'data/memory.sqlite3', validation_alias='MEMORY_DB_PATH')
-    commerce_db_path: Path = Field(default=PROJECT_ROOT / 'data/commerce.sqlite3', validation_alias='COMMERCE_DB_PATH')
-    knowledge_db_path: Path = Field(default=PROJECT_ROOT / 'data/knowledge.sqlite3', validation_alias='KNOWLEDGE_DB_PATH')
+    data_dir: Path = Field(default=PROJECT_ROOT / 'data', validation_alias='DATA_DIR')
+    memory_db_path: Path = Field(default_factory=lambda values: values['data_dir'] / 'memory.sqlite3',
+                                 validation_alias='MEMORY_DB_PATH')
+    commerce_db_path: Path = Field(default_factory=lambda values: values['data_dir'] / 'commerce.sqlite3',
+                                   validation_alias='COMMERCE_DB_PATH')
+    knowledge_db_path: Path = Field(default_factory=lambda values: values['data_dir'] / 'knowledge.sqlite3',
+                                    validation_alias='KNOWLEDGE_DB_PATH')
     demo_user_id: str = Field(default='U00001', min_length=1, validation_alias='DEMO_USER_ID')
     commerce_tool_transport: Literal['local', 'mcp'] = Field(default='local', validation_alias='COMMERCE_TOOL_TRANSPORT')
     catalog_evidence_enabled: bool = Field(default=True, validation_alias='CATALOG_EVIDENCE_ENABLED')
+    structured_routing: bool = Field(default=True, validation_alias='STRUCTURED_ROUTING')
+    kev_direct_routing: bool = Field(default=True, validation_alias='KEV_DIRECT_ROUTING')
+    natural_response_enabled: bool = Field(default=True, validation_alias='NATURAL_RESPONSE_ENABLED')
 
     # Retrieval
     rag_backend: Literal['fts', 'chroma'] = Field(default='fts', validation_alias='RAG_BACKEND')
-    chroma_path: Path = Field(default=PROJECT_ROOT / 'data/chroma', validation_alias='CHROMA_PATH')
+    chroma_path: Path = Field(default_factory=lambda values: values['data_dir'] / 'chroma', validation_alias='CHROMA_PATH')
     embedding_base_url: str = Field(default='', validation_alias='EMBEDDING_BASE_URL')
     embedding_model: str = Field(default='', validation_alias='EMBEDDING_MODEL')
     embedding_api_key: SecretStr = Field(default='local-dev-key', validation_alias='EMBEDDING_API_KEY')
-
-    # Web search (same fallback priority as before)
-    web_search_timeout_seconds: int = Field(default=8, ge=3, le=20, validation_alias='WEB_SEARCH_TIMEOUT_SECONDS')
-    web_search_proxy: str | None = Field(default=None, validation_alias=AliasChoices(
-        'WEB_SEARCH_PROXY', 'DDGS_PROXY', 'HTTPS_PROXY', 'https_proxy',
-        'HTTP_PROXY', 'http_proxy', 'ALL_PROXY', 'all_proxy'))
 
     # Jev/Kev routing and scope classification
     jev_mode: Literal['off', 'shadow', 'advisory'] = Field(default='off', validation_alias='JEV_MODE')
@@ -84,6 +85,16 @@ class Settings(BaseSettings):
     jev_api_key: SecretStr = Field(default='', validation_alias='JEV_API_KEY')
     jev_model: str = Field(default='jev-latest', min_length=1, validation_alias='JEV_MODEL')
     jev_timeout_seconds: float = Field(default=3, gt=0, validation_alias='JEV_TIMEOUT_SECONDS')
+    jev_advice_threshold: float = Field(default=.8, ge=0, le=1, validation_alias='JEV_ADVICE_THRESHOLD')
+    jev_reject_threshold: float = Field(default=.8, ge=0, le=1, validation_alias='JEV_REJECT_THRESHOLD')
+
+    @field_validator('data_dir', 'memory_db_path', 'commerce_db_path', 'knowledge_db_path', 'chroma_path', mode='before')
+    @classmethod
+    def normalize_storage_path(cls, value: Path | str) -> Path:
+        if not str(value).strip():
+            raise ValueError('存储路径不能为空')
+        path = Path(value).expanduser()
+        return path if path.is_absolute() else PROJECT_ROOT / path
 
     @field_validator('model_base_url', 'embedding_base_url', 'jev_base_url', mode='before')
     @classmethod
@@ -107,11 +118,6 @@ class Settings(BaseSettings):
     @classmethod
     def strip_text(cls, value: str) -> str:
         return value.strip()
-
-    @field_validator('web_search_proxy', mode='before')
-    @classmethod
-    def normalize_proxy(cls, value: str | None) -> str | None:
-        return (value.strip() or None) if value is not None else None
 
     @model_validator(mode='after')
     def validate_retrieval(self):
@@ -153,9 +159,16 @@ def override_settings(settings: Settings | Mapping[str, Any] | None = None, **up
         if name is None:
             raise ValueError(f'未知配置项: {key}')
         values[name] = value
+    # Rebase inherited defaults when changing DATA_DIR; keep individually configured paths.
+    if 'data_dir' in changes or 'DATA_DIR' in changes:
+        for name, filename in {'memory_db_path': 'memory.sqlite3', 'commerce_db_path': 'commerce.sqlite3',
+                               'knowledge_db_path': 'knowledge.sqlite3', 'chroma_path': 'chroma'}.items():
+            alias = Settings.model_fields[name].validation_alias
+            if name not in changes and alias not in changes and getattr(base, name) == base.data_dir / filename:
+                values.pop(name)
     # Use validation aliases explicitly so OS aliases cannot shadow init values.
     explicit = {(field.validation_alias.choices[0] if isinstance(field.validation_alias, AliasChoices)
-                 else field.validation_alias): values[name] for name, field in Settings.model_fields.items()}
+                 else field.validation_alias): values[name] for name, field in Settings.model_fields.items() if name in values}
     configured = Settings(_env_file=None, **explicit) if changes else base
     token = _settings_override.set(configured)
     try:

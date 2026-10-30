@@ -3,4 +3,4 @@ global:
 scrape_configs:
   - job_name: commerce-api
     static_configs:
-      - targets: ['api:8000']
+      - targets: ['127.0.0.1:8000']

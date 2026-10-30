@@ -2,27 +2,24 @@
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import json
-import os
 from pathlib import Path
 import sys
 from threading import Barrier
 import time
 import urllib.request
 
-# Use each application's own environment without printing credentials.
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-from dotenv import load_dotenv
-load_dotenv(ROOT / '.env')
+sys.path[:0] = [str(ROOT/'backend'), str(ROOT)]
+from app.core.config import get_settings
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--timeout', type=float, default=180)
     args = parser.parse_args()
-    buying = (ROOT / 'app/model.py').exists()
-    url = os.getenv('MODEL_BASE_URL' if buying else 'OPENAI_BASE_URL', 'http://127.0.0.1:8001/v1').rstrip('/')
-    key = os.getenv('MODEL_API_KEY' if buying else 'OPENAI_API_KEY', 'local-dev-key')
-    model = os.getenv('MODEL_NAME' if buying else 'QWEN_MODEL', 'qwen3-8b-awq')
+    settings = get_settings()
+    url = settings.model_base_url
+    key = settings.model_api_key.get_secret_value()
+    model = settings.model_name
     barrier = Barrier(2)
     def request(index):
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))

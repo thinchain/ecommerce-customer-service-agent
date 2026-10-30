@@ -41,6 +41,11 @@ async def customer_gate(question, history, *, settings: Settings | None = None):
         return {**gate, 'status': 'blocked', 'reason': 'scope_unavailable',
                 'reply': '客服范围校验暂时不可用，请稍后重试。'}
     choice = advice['choice']
+    from app.agents.request import historical_request, session_memory_request
+    if session_memory_request(question):
+        return {**gate, 'status': 'allowed', 'reason': 'explicit_session_memory'}
+    if historical_request(question) and history:
+        return {**gate, 'status': 'allowed', 'action': 'history_only', 'reason': 'explicit_history_request'}
     if choice == 'customer_service':
         return {**gate, 'status': 'allowed'}
     if choice == 'conversation_recall':
@@ -52,4 +57,7 @@ async def customer_gate(question, history, *, settings: Settings | None = None):
         reply = '该请求涉及越权访问或危险操作，客服系统不予执行。'
     elif choice == 'unclear':
         reply = '请说明需要咨询的商品、本人订单或售后问题。'
+    confidence = advice.get('confidence', 1.0)
+    if confidence < settings.jev_reject_threshold:
+        return {**gate, 'status': 'allowed', 'reason': 'low_confidence_fallback'}
     return {**gate, 'status': 'blocked', 'reason': choice, 'reply': reply}

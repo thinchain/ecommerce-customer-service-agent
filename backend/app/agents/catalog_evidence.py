@@ -170,7 +170,9 @@ Latest relevant attempts (including failures/empty results) supersede old facts.
                 observation = {'arguments': None, 'facts': [], 'status': 'missing_observation',
                                'execution_ok': False, 'truncated': False}
             observations.append(observation)
-    explicit = product_ids(question) or list(target_ids or [])
+    from app.agents.request import explicit_products, requested_fields
+    fields = requested_fields(question)
+    explicit = explicit_products(question) or list(target_ids or [])
     targets = list(explicit)
     if not targets:
         for observation in observations:
@@ -213,18 +215,23 @@ Latest relevant attempts (including failures/empty results) supersede old facts.
         cents, stock = by_field['price_cents']['value'], by_field['stock']['value']
         sources[pid] = observation['observation_id']
         facts.extend(selected)
-        lines.append(f'商品 `{pid}`：本轮查询价格 ¥{cents // 100}.{cents % 100:02d}，库存 {stock} 件'
-                     + ('（缺货）' if stock == 0 else '') + '。[catalog_search]')
+        values = []
+        if 'price' in fields:
+            values.append(f'本轮查询价格 ¥{cents // 100}.{cents % 100:02d}')
+        if 'stock' in fields:
+            values.append(f'库存 {stock} 件' + ('（缺货）' if stock == 0 else ''))
+        if values:
+            lines.append(f'商品 `{pid}`：' + '，'.join(values) + '。[catalog_search]')
     if not targets:
         lines.append('本轮未取得可校验的商品价格库存，请提供明确的商品 ID 后重新查询。')
     if any(observation['truncated'] for observation in observations):
         lines.append('查询结果有截断，仅展示已返回并校验的记录，不代表全部结果。')
-    if missing or not targets:
-        lines.append('空结果、筛选条件或工具异常均不能证明商品不存在，也不能据此推断价格或库存。')
-    lines.append('以上为演示商店的本轮查询记录。')
+    if not {'price', 'stock'}.intersection(fields):
+        lines = []
     if historical:
         lines = [line.replace('本轮', '历史').replace('本次', '该次') for line in lines]
     return '\n\n'.join(lines), {'version': 1, 'mode': 'server_catalog',
+                                  'entity_scope': 'resolved' if explicit else 'candidates',
                                   'status': 'partial' if facts and missing else 'bound' if facts else 'insufficient',
                                   'facts': facts, 'missing': missing, 'sources': sources,
                                   'observations': observations, 'draft_published': False,

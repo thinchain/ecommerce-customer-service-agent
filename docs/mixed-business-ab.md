@@ -1,5 +1,9 @@
 # 第二阶段：混合咨询与本地 Qwen A/B
 
+本页记录第二阶段证据组合与当时评测口径。当前默认启用统一的模型自然表达环节：
+事实与完整快照仍由以下契约约束，正文可概括；不再强制向顾客展示完整资料摘录。
+新旧输出与调用成本应分别比较，详见[证据与自然表达](catalog-evidence-mvp.md)。
+
 ## 修复前审查
 
 下列定位针对第一阶段源码逻辑，相关分支现已修改：
@@ -69,7 +73,7 @@ Mock 模型和 Mock `/models` 响应；这不是一次真实 Qwen 测试。临�
 权重未被同名替换。需另记录实际权重、vLLM 启动参数、GPU 和负载，并在实验期间保持稳定。
 
 A/B 为同一源码的开关对照：legacy=false，evidence=true；不是旧 commit 二进制复现。
-两组同 endpoint/model/temperature/max_tokens/预算，关闭 Kev 与联网，使用 FTS、本地工具。
+两组同 endpoint/model/temperature/max_tokens/预算，关闭 Kev，使用 FTS、本地工具。
 按 episode 交错 AB/BA，默认3次重复、串行执行；每组每案例每次重复独立数据库副本和 UUID。
 同 episode 多轮共享自己的会话。模型客户端／熔断在 episode 边界重置。
 工具故障通过固定标记注入，两个版本一致，不修改数据库；真实模型仍负责选择和调用工具。
@@ -106,3 +110,47 @@ Token 使用 SDK 返回的 usage；缺失记 null。失败请求的远端消耗�
 事实一致率按人工判断的已审核回答统计，任务完成率要求回答所有可完成子问题并准确说明缺口。
 应一起报告审核覆盖率、错误放行、误拒答、子任务覆盖和 Bad Case；不能靠全拒答获得漂亮准确率。
 先使用固定案例作基线，再增加人工真实风格问题与单 Agent 基线，才讨论架构收益。
+
+## 本地 Kev C / D 对照
+
+已有 `evidence-ab` 的 82 轮结果保留不动。复用同一个 `--prepare` 数据目录，
+通过 `--suite kev-cd` 新增两组，证据机制均开启：
+
+| 组别 | JEV_MODE | JEV_SCOPE_ENABLED | 用途 |
+| --- | --- | --- | --- |
+| C | advisory | false | 领域建议；Qwen 仍负责协调 |
+| D | advisory | true | 领域建议加客服范围分类 |
+
+```bash
+.venv/bin/python -B scripts/evaluate_qwen_ab.py \
+  --run reports/qwen-ab-data-r1 \
+  --output reports/qwen-cd-run-r1 \
+  --suite kev-cd \
+  --base-url http://127.0.0.1:8001/v1 --model qwen3.5-4b \
+  --kev-base-url http://127.0.0.1:8795/v1 --kev-model kev-4b \
+  --kev-timeout 3 --repeats 1 --allow-model-requests
+```
+
+Qwen 和 Kev 均须事先启动；不需要单独启动 FastAPI 或前端。两个接口均只允许本地
+HTTP `/v1`，运行前检查 `/models`，输出目录仍必须不存在。鉴权分别读取终端环境变量
+`OPENAI_API_KEY` 与 `JEV_API_KEY`，不会从 `.env` 自动读取这些值。默认 Qwen 开发密钥为
+`local-dev-key`，Kev 默认为无鉴权。已有服务配置了不同密钥时先设置相应环境变量。
+
+使用 37 案例、41 轮数据时，`--repeats 1` 新增 82 轮，C/D 按案例交替顺序。
+`run.json` 保存两组的完整开关配置，`results.jsonl` 新增 `decision`、`kev_calls` 和
+`kev_tokens`；`summary.json` 按 C、D 汇总 Qwen 调用数、范围拦截数、Kev 调用成功/失败、
+P50/P95 耗时、分类分布、建议接受次数以及接口提供的用量。Qwen 和 Kev 的用量分别统计，
+缺失的用量记未知，不推算成零。耗时为客户端观察到的调用墙钟时间，不等于 GPU 计算时间。
+不测量显存、能耗、货币成本，也不以减少 Qwen 调用代替任务完成率。
+
+人工审核可额外填写 `manual_review.kev_scope_correct`、`kev_route_correct`，未审核仍为 null。
+常见问候和危险规则可以绕过分类；按 `decision` 和实际 `kev_calls` 区分规则贡献与模型贡献。
+现有案例侧重客服任务，不覆盖完整的范围外/危险/回顾分类分布，不能据此宣称总体分类准确率。
+
+旧结果的 `evidence` 是“证据开启、Kev 关闭”的参考基线，不是前述配置表的 B 组
+（B 组应为仅开启范围分类）。C/D 与旧 `evidence` 跨批次比较时确认应用源码、数据、
+模型权重和预算一致，并记录两次运行的 GPU 负载差异；这不是同时交错的三组实验。
+
+审核与汇总方式不变，C/D 对照的配对耗时差为 D 减 C；原 evidence-ab 的汇总格式仍兼容。
+
+逐条可视化、基准数据核对、流程清单与审核导出见 [评测审阅说明](evaluation-review.md)。

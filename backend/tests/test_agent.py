@@ -110,6 +110,20 @@ class AgentTests(ConfiguredAsyncTestCase):
         self.assertEqual((len(messages) - 3) % 2, 0)
         self.assertTrue(messages[-2]['content'].startswith('99'))
 
+    def test_context_preserves_permitted_history_without_rewriting_or_changing_memory(self):
+        history = [
+            {'role': 'user', 'content': '查询 ORD00001 物流状态'},
+            {'role': 'assistant', 'content': '订单查询暂时不可用', 'tool_calls': [
+                {'name': 'order_detail', 'result': {'ok': False, 'error': 'timeout'}}],
+             'agent_events': [{'agent': 'orders', 'status': 'failed'}]},
+        ]
+        memories = {'语言': '中文'}
+        original = json.dumps([history, memories], ensure_ascii=False)
+        messages = build_context(history, memories, '你好')
+        self.assertEqual(messages[-3]['content'], history[0]['content'])
+        self.assertEqual(messages[-2]['content'], history[1]['content'])
+        self.assertEqual(json.dumps([history, memories], ensure_ascii=False), original)
+
     async def test_context_pressure_keeps_tool_protocol_intact(self):
         history = [{'role': role, 'content': '长' * 400} for _ in range(20) for role in ('user', 'assistant')]
         self.store.save(self.sid, history, {})

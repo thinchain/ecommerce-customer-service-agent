@@ -4,7 +4,6 @@ pydantic-settings>=2.7,<3
 openai>=1.60,<3.0
 python-dotenv>=1.0,<2.0
 uvicorn[standard]>=0.30,<1.0
-ddgs>=9.16,<10
 mcp>=1.26,<2
 chromadb>=1.0,<2
 langgraph>=1.2.12,<2

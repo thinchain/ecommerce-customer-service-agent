@@ -1,5 +1,6 @@
 """Framework contracts: message fidelity, settings isolation and stateless execution."""
 import asyncio
+from contextlib import chdir
 import json
 import os
 import tempfile
@@ -13,7 +14,7 @@ from pydantic import ValidationError
 from app.agents.team_agent import LangGraphTeamAgent
 from app.agents.graph import bounded_report
 from app.core import Agent, AgentConfig, AgentResult, ConversationMessage, Message, RunContext, Settings
-from app.core.config import get_settings, override_settings
+from app.core.config import PROJECT_ROOT, get_settings, override_settings
 from app.core.exceptions import ModelServiceError
 from app.core.message import model_messages
 from app.services.agent import run_agent
@@ -79,6 +80,40 @@ class MessageTests(ConfiguredTestCase):
 
 
 class SettingsTests(ConfiguredTestCase):
+    def test_storage_root_and_individual_override_follow_configuration_priority(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            dotenv = root / '.env'
+            dotenv.write_text(f'DATA_DIR={root / "file-data"}\nMEMORY_DB_PATH={root / "private-memory.sqlite3"}\n')
+            with patch.dict(os.environ, {'DATA_DIR': str(root/'environment-data')}, clear=True):
+                settings = Settings.from_env(dotenv)
+                self.assertEqual(settings.commerce_db_path, root/'environment-data/commerce.sqlite3')
+                self.assertEqual(settings.knowledge_db_path, root/'environment-data/knowledge.sqlite3')
+                self.assertEqual(settings.chroma_path, root/'environment-data/chroma')
+                self.assertEqual(settings.memory_db_path, root/'private-memory.sqlite3')
+                explicit = Settings(_env_file=dotenv, DATA_DIR=root/'explicit-data')
+                self.assertEqual(explicit.commerce_db_path, root/'explicit-data/commerce.sqlite3')
+            self.assertFalse((root/'environment-data').exists())
+
+    def test_relative_storage_paths_are_independent_of_working_directory(self):
+        with tempfile.TemporaryDirectory() as directory, chdir(directory), patch.dict(os.environ, {}, clear=True):
+            settings = Settings(_env_file=None, DATA_DIR='data/demo', MEMORY_DB_PATH='data/custom.sqlite3')
+        self.assertEqual(settings.data_dir, PROJECT_ROOT/'data/demo')
+        self.assertEqual(settings.commerce_db_path, PROJECT_ROOT/'data/demo/commerce.sqlite3')
+        self.assertEqual(settings.memory_db_path, PROJECT_ROOT/'data/custom.sqlite3')
+
+    def test_storage_root_override_rebases_defaults_and_keeps_custom_paths(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {}, clear=True):
+            root = Path(directory)
+            base = Settings(_env_file=None, DATA_DIR=root/'original', MEMORY_DB_PATH=root/'custom-memory.sqlite3')
+            with override_settings(base), override_settings(DATA_DIR=root/'replacement') as settings:
+                self.assertEqual(settings.commerce_db_path, root/'replacement/commerce.sqlite3')
+                self.assertEqual(settings.memory_db_path, root/'custom-memory.sqlite3')
+                with override_settings(DATA_DIR=root/'nested', COMMERCE_DB_PATH=root/'custom-commerce.sqlite3') as nested:
+                    self.assertEqual(nested.commerce_db_path, root/'custom-commerce.sqlite3')
+                    self.assertEqual(nested.knowledge_db_path, root/'nested/knowledge.sqlite3')
+            self.assertEqual(base.commerce_db_path, root/'original/commerce.sqlite3')
+
     def test_env_file_process_env_and_explicit_arguments_priority(self):
         with tempfile.TemporaryDirectory() as directory:
             dotenv = Path(directory) / '.env'
@@ -95,7 +130,8 @@ class SettingsTests(ConfiguredTestCase):
                        {'MODEL_TEMPERATURE': -1}, {'QWEN_MODEL': ' '}, {'OPENAI_BASE_URL': ''},
                        {'OPENAI_BASE_URL': 'http://'}, {'OPENAI_BASE_URL': 'http://localhost:99999'},
                        {'RAG_BACKEND': 'other'}, {'COMMERCE_TOOL_TRANSPORT': 'other'},
-                       {'JEV_MODE': 'other'}, {'JEV_TIMEOUT_SECONDS': 0}):
+                       {'JEV_MODE': 'other'}, {'JEV_TIMEOUT_SECONDS': 0},
+                       {'DATA_DIR': ''}, {'COMMERCE_DB_PATH': ''}):
             with self.subTest(values=values), self.assertRaises(ValidationError):
                 with override_settings(values):
                     self.fail('Invalid settings must not be activated')

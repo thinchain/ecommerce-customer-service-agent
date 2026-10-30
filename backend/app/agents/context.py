@@ -33,9 +33,11 @@ def build_context(history, memories, question, *, budget, system_prompt=SUPERVIS
 
 def fit_context(base, history, current, rounds, budget, final=False):
     history, rounds = list(history), list(rounds)
-    suffix = [{'role': 'system', 'content': '本轮执行预算已用尽。根据现有证据回答并说明缺口，不再调用工具。'}] if final else []
+    base = [dict(item) for item in base]
+    if final:
+        base[0]['content'] += '\n本轮执行预算已用尽。根据现有证据回答并说明缺口，不再调用工具。'
     def assemble():
-        return [*base, *history, current, *[item for group in rounds for item in group], *suffix]
+        return [*base, *history, current, *[item for group in rounds for item in group]]
     while size(assemble()) > budget and history:
         history = history[2:]
     while size(assemble()) > budget and len(rounds) > 1:

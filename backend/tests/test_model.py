@@ -12,6 +12,22 @@ from app.ops.resilience import CircuitBreaker
 
 
 class ModelTests(ConfiguredAsyncTestCase):
+    async def test_connection_failure_does_not_log_private_endpoint(self):
+        endpoint = 'http://private-model.invalid:8123/v1'
+        def handler(request):
+            raise httpx.ConnectError('unavailable', request=request)
+        async with AsyncOpenAI(api_key='test', max_retries=0, base_url=endpoint, http_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(handler)
+        )) as client:
+            with override_settings(OPENAI_BASE_URL=endpoint, MODEL_RETRIES=0), \
+                    patch('app.services.qwen.client', client), \
+                    patch('app.services.qwen.breaker', CircuitBreaker()), \
+                    self.assertLogs('app.services.qwen', level='WARNING') as logs:
+                with self.assertRaises(ModelServiceError):
+                    await complete([{'role': 'user', 'content': '你好'}], TOOL_SCHEMAS)
+        self.assertNotIn(endpoint, '\n'.join(logs.output))
+        self.assertIn('OPENAI_BASE_URL', '\n'.join(logs.output))
+
     async def test_history_only_request_omits_empty_tools_for_vllm(self):
         def handler(request):
             body = json.loads(request.content)
@@ -41,7 +57,7 @@ class ModelTests(ConfiguredAsyncTestCase):
         self.assertEqual(len(attempts), 1)
         self.assertEqual(error.exception.status_code, 504)
 
-    async def test_retry_can_require_search_and_final_disables_tools(self):
+    async def test_retry_can_require_business_tool_and_final_disables_tools(self):
         choices = []
 
         def handler(request):
@@ -54,9 +70,9 @@ class ModelTests(ConfiguredAsyncTestCase):
 
         async with AsyncOpenAI(api_key='test', http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler))) as client:
             with patch('app.services.qwen.client', client):
-                await complete([{'role': 'user', 'content': '再试一次'}], TOOL_SCHEMAS, required_tool='web_search')
-                await complete([{'role': 'user', 'content': '再试一次'}], TOOL_SCHEMAS, final=True, required_tool='web_search')
-        self.assertEqual(choices, [{'type': 'function', 'function': {'name': 'web_search'}}, 'none'])
+                await complete([{'role': 'user', 'content': '再试一次'}], TOOL_SCHEMAS, required_tool='order_detail')
+                await complete([{'role': 'user', 'content': '再试一次'}], TOOL_SCHEMAS, final=True, required_tool='order_detail')
+        self.assertEqual(choices, [{'type': 'function', 'function': {'name': 'order_detail'}}, 'none'])
 
     async def test_sdk_wire_format_and_tool_response(self):
         def handler(request):

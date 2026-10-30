@@ -22,7 +22,7 @@ def citation_check(reply, trace):
             for hit in result.get('hits',[]) if isinstance(result,dict) else []:
                 if isinstance(hit,dict) and isinstance(hit.get('citation'),str):available.add(hit['citation'])
     # A bracketed tool name is also a source claim, not proof that it ran.
-    tool_citations = set(re.findall(r'\[(catalog_search|knowledge_search|list_orders|order_detail|web_search)\]', reply))
+    tool_citations = set(re.findall(r'\[(catalog_search|knowledge_search|list_orders|order_detail)\]', reply))
     used = {call['name'] for call in trace if call['result'].get('ok')}
     return {'cited':sorted(cited),'invalid':sorted((cited-available) | (tool_citations-used)),
             'citation_id_precision':len(cited&available)/len(cited) if cited else None,
@@ -32,7 +32,7 @@ def citation_check(reply, trace):
 def score_case(case, result):
     used={call['name'] for call in result.get('tool_calls',[]) if call['result'].get('ok')}
     expected=set(case.get('required_tools',[]))
-    routes={event['agent'] for event in result.get('agent_events',[]) if event['agent']!='supervisor'}
+    routes={event['agent'] for event in result.get('agent_events',[]) if event['agent'] not in ('supervisor','responder')}
     reply=result['reply']
     checks={'tools_correct':expected<=used and not (used & set(case.get('forbidden_tools',[]))),
             'routing_exact':routes==set(case.get('expected_agents',[])),

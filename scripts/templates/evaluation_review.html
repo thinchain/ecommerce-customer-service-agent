@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>客服 Agent · 评测审阅</title>
+<style>
+:root{color-scheme:light;--ink:#183137;--muted:#64767b;--line:#dce5e5;--paper:#f5f8f7;--teal:#126c67;--red:#a33c34;--amber:#92621b}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:28px 32px 20px;background:#123e42;color:#f2ffff}header h1{font-size:25px;letter-spacing:.04em;margin:4px 0 6px}header p{margin:0;color:#c5dcdd;max-width:1100px}.eyebrow{font-size:11px;letter-spacing:.16em;color:#95ceca}
+main{max-width:1720px;margin:auto;padding:20px 24px}.panel{background:white;border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:16px}h2{font-size:17px;margin:0 0 12px}h3{font-size:14px;margin:14px 0 8px}p{margin:8px 0}.muted{color:var(--muted)}.small{font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;color:var(--muted);font-weight:500;background:#f6f9f8}th,td{padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}td{overflow-wrap:anywhere}.table-wrap{overflow:auto}thead{white-space:nowrap}
+button,select,input,textarea{font:inherit;border:1px solid #cbd8d8;border-radius:6px;background:#fff;color:var(--ink);padding:7px 10px}button{cursor:pointer}button:hover{border-color:var(--teal);background:#edf7f5}button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #77c5bc;outline-offset:2px}.primary{background:var(--teal);color:white;border-color:var(--teal)}.primary:hover{background:#0b514d;color:white}button:disabled{opacity:.45;cursor:default}label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.toolbar label{min-width:130px}.toolbar input[type=search]{min-width:240px}.toolbar button{align-self:end}.tag{display:inline-block;border-radius:5px;background:#eaf2f1;color:#2d6460;font-size:11px;padding:2px 7px;margin:2px 4px 2px 0}.warn{background:#fff0dc;color:var(--amber)}.bad{background:#fbe8e6;color:var(--red)}.unknown{background:#edf0f2;color:#63717c}.good{background:#e4f3eb;color:#2b6b49}
+.workspace{display:grid;grid-template-columns:310px minmax(0,1fr);gap:16px;align-items:start}.workspace>*{min-width:0}.sidebar{position:sticky;top:12px;padding:14px}.case-list{max-height:74vh;overflow:auto;margin-top:10px}.case-item{display:block;text-align:left;width:100%;margin-bottom:6px;padding:10px;border:1px solid transparent;background:#f6f8f8}.case-item.active{background:#e6f4f0;border-color:#78b4aa}.case-item strong{font-size:13px}.case-item .question{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:3px 0}.case-item .muted{font-size:11px}
+.reply{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7faf9;border-left:3px solid #78afa4;padding:12px;max-height:480px;overflow:auto;font-size:13px}.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.compare-card{border:1px solid var(--line);border-radius:7px;padding:12px}.compare-card.selected{border-color:var(--teal)}.compare-card .reply{max-height:360px;margin:10px 0}.bar{height:4px;background:#72aaa1;border-radius:3px;margin-top:6px;max-width:160px}
+details{border:1px solid var(--line);border-radius:7px;padding:10px 12px;margin:8px 0}summary{cursor:pointer;font-weight:500}pre{white-space:pre-wrap;word-break:break-word;background:#f3f6f6;padding:12px;border-radius:6px;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;max-height:520px;overflow:auto}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.event{border-left:3px solid #8db9b1;padding:7px 12px;margin:7px 0;background:#f6faf9}.event.failed{border-color:#c17a65;background:#fcf4ef}.checks{list-style:none;padding:0;margin:0}.checks li{padding:8px 0;border-bottom:1px solid var(--line)}.review-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px}.review-grid select{width:100%}textarea{width:100%;min-height:85px}.notice{border-left:3px solid #d5a353;background:#fff7ea;padding:10px 13px;margin:12px 0}.empty{padding:24px;color:var(--muted)}.hidden{display:none!important}.inline-check{display:inline-flex;flex-direction:row;align-items:center;gap:6px}.inline-check input{margin:0}.caption{font-size:12px;color:var(--muted)}
+@media(max-width:950px){main{padding:12px}.workspace{grid-template-columns:1fr}.sidebar{position:static}.case-list{max-height:260px}.compare-grid{grid-template-columns:1fr}header{padding:20px}.toolbar input[type=search]{min-width:180px}}
+.steps{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}.steps span{background:#eaf4f1;border:1px solid #c8ddd7;border-radius:6px;padding:6px 10px}.steps span+span:before{content:'→ ';color:var(--teal)}.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:12px 0}.metric{padding:12px;background:#f3f8f6;border-radius:7px}.metric strong{display:block;font-size:19px}.probability{height:7px;max-width:220px;background:#e8efed;border-radius:5px;overflow:hidden}.probability span{display:block;background:#358a7c;height:100%}.case-section{scroll-margin-top:12px}.case-heading{margin:10px 0}.all-case{background:#fff;padding:16px;margin-bottom:14px}.all-case>summary{font-size:15px}.all-case .case-document{margin-top:18px}.all-case .panel{border-radius:6px}.review-notes{white-space:pre-wrap;overflow-wrap:anywhere;background:#f6faf9;padding:12px}.full-reply{max-height:none}.tool-heading{display:flex;flex-wrap:wrap;gap:6px;align-items:center}#all-records{min-width:0}nav a{color:var(--teal);margin-right:12px}progress{accent-color:var(--teal)}
+@media print{header{background:white;color:black}.toolbar,.sidebar,#review-save,.review-editor{display:none!important}.workspace{display:block}details>summary{font-weight:bold}.reply,pre{max-height:none;overflow:visible}.panel{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header><div class="eyebrow">LOCAL EVALUATION · READ / COMPARE / REVIEW</div><h1>客服 Agent 评测审阅</h1><p>按样例比较回答与执行记录。自动检查只提供线索；HTTP 200、工具成功、关键词命中和数值解析正确，均不能单独证明任务完成。AI 初审需人工复核，审核来源以表格和逐轮标注为准。</p></header>
+<main>
+<section class="panel"><h2>批次概览</h2><p>A = legacy：证据约束关闭；B = evidence：证据约束开启；C：证据开启 + Kev 领域建议；D：证据开启 + Kev 领域建议和入口范围分类。新工作流：Qwen_only 使用协调器；Kev_route 增加领域建议及校验后的直达路径；Kev_scope 再启用范围分类。</p><div id="overview" class="table-wrap"></div><p class="caption">P50 / P95 为整轮请求耗时；Token 均值仅覆盖用量完整的轮次。各版本样本及审核分母分别展示，未知值用 — 表示。原 legacy / evidence 与 C / D 分批执行，硬件负载未独立测量。</p><h3>逐轮审核维度</h3><div id="quality-overview" class="table-wrap"></div><p class="caption">百分比同时显示已审核分母；误拒答率越低越好，其余维度越高越好。AI 初审与人工复核来源见上表和逐条记录；不适用项不进入该维度分母。</p></section>
+<details class="panel"><summary>怎样判断指标、回复与执行流程？</summary><div class="table-wrap"><table><thead><tr><th>检查维度</th><th>审核依据</th><th>如何看待好坏</th></tr></thead><tbody>
+<tr><td>任务完成</td><td>逐项拆出问题要求，核对每个可完成子任务；数据缺失时是否准确解释对应缺口。</td><td>同一保留集上越高越好；接口失败计入任务失败，不能只审查成功请求。</td></tr>
+<tr><td>事实一致</td><td>核对基准数据库、知识原文、商品实体、金额单位、时间范围与否定条件。</td><td>不支持的功能不能说支持；只拒答可避免编造，却不代表完成任务。先报告审核覆盖率。</td></tr>
+<tr><td>误拒答</td><td>原资料有答案却拒绝可回答部分；纯无答案问题标“不适用”。</td><td>越低越好，必须说明分母。混合问题只完成一部分也要核对剩余部分是否本可回答。</td></tr>
+<tr><td>流程符合预期</td><td>角色分工、必要工具、依赖顺序、参数和实体交接、失败处理、最终证据使用。</td><td>结构检查不满足时优先排查；满足后仍需核对参数和语义，不能只按固定工具序列打分。</td></tr>
+<tr><td>Kev 分类</td><td>范围分类是否误拦截正常客服请求；领域建议是否适合当前任务，置信度是否达到实际采用门槛。</td><td>分类接口成功不等于分类正确；规则拦截和模型分类分开计算。当前样例不是完整分类保留集。</td></tr>
+<tr><td>延迟与资源</td><td>同模型、同预算和可比任务完成质量下比较请求 P50/P95、调用数与完整 Token。</td><td>通常越低越好；少回答或误拦截造成的“节省”不视为改进。调用墙钟时间不是 GPU 计算时间，未测量显存、能耗及金额。</td></tr>
+</tbody></table></div><p>流程清单是在运行后补充的审核辅助，不是独立盲测标签。旧批次未保存完整模型消息和节点时间戳；新工作流批次保存模型输入/输出、角色、调用时间及 Kev 请求/响应。按原件展示，不重建未记录数据，不要求或展示隐藏思考。</p></details>
+<section class="panel"><div class="toolbar">
+<label>搜索案例、问题或回复<input id="search" type="search" placeholder="例如 h04 / macOS / 退款"></label>
+<label>批次<select id="run-filter"></select></label><label>版本<select id="variant-filter"></select></label>
+<label>类别<select id="category-filter"></select></label><label>关注项<select id="alert-filter"><option value="">全部记录</option><option value="any">存在自动提示</option><option value="flow">流程检查不满足</option><option value="review-task-fail">审核：任务未完成</option><option value="review-flow-fail">审核：流程不符合</option><option value="review-citation-fail">审核：引用无效</option><option value="ai-review">AI 初审记录</option><option value="scope">范围拦截</option><option value="model">内部模型错误</option><option value="rules">关键词规则未通过</option><option value="http">HTTP 失败</option><option value="fault">故障注入案例</option><option value="pending">任务完成度未审核</option><option value="reviewed">任务完成度已审核</option></select></label>
+<button id="reset">重置筛选</button><button id="view-toggle" class="primary">连续浏览全部样例</button></div><p class="caption">每条固定为：01 输入与上下文 → 02 预期与测试条件 → 03 实际流程和过程数据 → 04 最终输出 → 05 AI 评价与复核。</p></section>
+<div class="workspace"><aside class="panel sidebar"><strong id="list-count"></strong><div id="case-list" class="case-list"></div></aside><article id="detail"></article></div>
+<section id="all-records" class="hidden"><div class="panel toolbar"><strong id="all-count"></strong><button id="expand-all">展开当前筛选的全部记录</button><button id="collapse-all">收起全部记录</button><span class="caption">逐条展开可查看相同的五段格式；完整数据均已嵌入此 HTML。</span></div><div id="all-list"></div></section>
+<section class="panel"><h2>基准数据与原始资料</h2><p class="caption">来自显式提供且经过校验的合成测试数据；与工具返回结果独立展示。仅在批次数据哈希匹配时作为该批基准。价格字段 price_cents 单位为分。</p><div id="reference"></div></section>
+<section class="panel" id="review-save"><h2>保存与导入审核</h2><p>标注优先保存在当前浏览器；不修改原始 JSONL。完成后导出对应批次的审核文件，再用评测脚本的 <code>--summarize ... --reviews ...</code> 汇总。更换浏览器或清理存储前请导出。</p>
+<div class="toolbar"><label>导出 / 导入对应批次<select id="export-run"></select></label><button id="export" class="primary">导出审核 JSONL</button><label>导入该批已有审核<input id="import" type="file" accept=".jsonl,.json"></label></div><p id="storage-status" class="caption"></p></section>
+</main>
+<script id="report-data" type="application/json">/*__REPORT_DATA__*/</script>
+<script>
+'use strict';
+const DATA = JSON.parse(document.getElementById('report-data').textContent);
+const $ = id => document.getElementById(id);
+const records = DATA.records, runs = new Map(DATA.runs.map(run => [run.id, run]));
+const fields = [
+ ['fact_correct','事实是否一致'], ['task_completed','任务是否完成'], ['workflow_correct','执行流程是否符合预期'],
+ ['false_refusal','是否存在误拒答'], ['kev_scope_correct','Kev 范围分类是否正确'], ['kev_route_correct','Kev 领域建议是否正确'],
+ ['evidence_supported','主要结论是否有有效证据'], ['citation_correct','明确引用是否有效']
+];
+const storageKey = 'agent-review-' + DATA.review_key;
+let reviews = {}, storageAvailable = true, selected = records.find(r=>r.run===DATA.runs.at(-1)?.id)?.key||records[0]?.key, allMode = false;
+try { reviews = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch { storageAvailable = false; }
+function el(tag, text, cls) { const node = document.createElement(tag); if(text !== undefined) node.textContent = text; if(cls) node.className = cls; return node; }
+function append(parent,...children) { for(const child of children) if(child) parent.append(child); return parent; }
+function pretty(value) { return JSON.stringify(value, null, 2); }
+function tag(text, cls='') { return el('span', text, 'tag '+cls); }
+function num(value, digits=2) { return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(digits) : '—'; }
+function ratio(a,b) { return b ? (100*a/b).toFixed(1)+'%' : '—'; }
+function percentile(values,q) { const sorted=[...values].sort((a,b)=>a-b); return sorted.length ? sorted[Math.min(sorted.length-1,Math.floor(sorted.length*q))] : null; }
+function median(values) { const sorted=[...values].sort((a,b)=>a-b),n=sorted.length; return n ? n%2 ? sorted[(n-1)/2] : (sorted[n/2-1]+sorted[n/2])/2 : null; }
+function review(item) { return {...item.raw.manual_review,...item.initial_review,...reviews[item.key]}; }
+function option(select,value,label) { const node=el('option',label);node.value=value;select.append(node); }
+function jsonDetail(title,value,open=false) { const node=el('details');node.open=open;return append(node,el('summary',title),el('pre',pretty(value))); }
+function section(title) { const node=el('section',undefined,'panel');node.append(el('h2',title));return node; }
+function save() {
+ try { localStorage.setItem(storageKey,JSON.stringify(reviews)); storageAvailable=true; } catch { storageAvailable=false; }
+ $('storage-status').textContent=storageAvailable ? '审核暂存在本机浏览器；请导出文件保存。' : '浏览器存储不可用；标注仅在本页内存中，请在关闭页面前导出。';
+}
+function updateReview(item,key,value) { reviews[item.key]={...review(item),[key]:value};save();renderOverview();renderList();renderDetail();const editor=$('detail').querySelector('.review-editor');if(editor)editor.open=true; }
+function makeTable(headers,rows) {
+ const table=el('table'),head=el('tr');headers.forEach(value=>head.append(el('th',value)));
+ append(table,append(el('thead'),head));const body=el('tbody');
+ for(const row of rows) {const tr=el('tr');for(const value of row) tr.append(value instanceof Node ? append(el('td'),value) : el('td',String(value??'—')));body.append(tr);}
+ return append(table,body);
+}
+function renderOverview() {
+ const rows=[],qualityRows=[],kevRows=[];
+ for(const run of DATA.runs) for(const variant of [...new Set(records.filter(r=>r.run===run.id).map(r=>r.raw.variant))]) {
+  const group=records.filter(r=>r.run===run.id&&r.raw.variant===variant),lat=group.map(r=>r.raw.latency_seconds);
+  const qwen=group.flatMap(r=>r.raw.model_calls||[]),kev=group.flatMap(r=>r.raw.kev_calls||[]);
+  const kevKnown=kev.map(c=>({input:c.usage?.input_tokens??c.usage?.prompt_tokens,output:c.usage?.output_tokens??c.usage?.completion_tokens})).filter(u=>Number.isInteger(u.input)&&u.input>=0&&Number.isInteger(u.output)&&u.output>=0);
+  kevRows.push([`${run.label} · ${variant}`,kev.length,num(kev.reduce((s,c)=>s+(c.seconds||0),0),3),`${kevKnown.length}/${kev.length}`,kevKnown.length?kevKnown.reduce((s,u)=>s+u.input,0):'—',kevKnown.length?kevKnown.reduce((s,u)=>s+u.output,0):'—',kev.filter(c=>c.mode==='advisory'&&c.result?.advisory_accepted===true).length]);
+  const known=group.filter(r=>r.raw.tokens?.complete),tokens=known.reduce((sum,r)=>sum+r.raw.tokens.total_tokens,0);
+  const judged=group.filter(r=>typeof review(r).task_completed==='boolean');
+  const ai=judged.filter(r=>review(r).review_source==='assistant').length,human=judged.filter(r=>review(r).review_source==='human').length;
+  const quality=el('div');append(quality,el('strong',ratio(judged.filter(r=>review(r).task_completed).length,judged.length)),el('div',`审核 ${judged.length}/${group.length} · AI ${ai} / 人工 ${human}`,'small muted'));
+  const latency=el('div',`${num(median(lat))} / ${num(percentile(lat,.95))} 秒`);const bar=el('div',undefined,'bar');bar.style.width=Math.min(160,(percentile(lat,.95)||0)*4)+'px';latency.append(bar);
+  rows.push([`${run.label} · ${variant}`,group.length,group.filter(r=>r.raw.http_status!==200).length,
+    group.filter(r=>r.alerts.some(a=>a.kind==='model')).length,group.filter(r=>r.alerts.some(a=>a.kind==='scope')).length,
+    qwen.length,kev.length,latency,known.length?`${num(tokens/known.length,0)}（${known.length}/${group.length}）`:'—',quality]);
+  qualityRows.push([variant,...['fact_correct','task_completed','workflow_correct','false_refusal','kev_scope_correct','kev_route_correct','evidence_supported','citation_correct'].map(key=>{const subset=group.filter(r=>typeof review(r)[key]==='boolean');return subset.length?`${ratio(subset.filter(r=>review(r)[key]).length,subset.length)}（${subset.length}/${group.length}）`:'—';})]);
+ }
+ $('overview').replaceChildren(makeTable(['批次 / 版本','轮数','HTTP失败','内部模型异常轮数','范围拦截','Qwen调用','Kev调用','P50 / P95','Qwen Token均值（覆盖）','任务完成率 / 审核来源'],rows));
+ $('quality-overview').replaceChildren(makeTable(['版本','事实一致','任务完成','流程合理','误拒答','Kev范围正确','Kev领域正确','目标证据支持','引用有效'],qualityRows));
+ let cost=$('kev-cost-overview');if(!cost){cost=el('div');cost.id='kev-cost-overview';$('quality-overview').after(cost);}
+ cost.replaceChildren(el('h3','Kev 实际调用和用量'),wrapTable(['批次 / 版本','调用','累计墙钟秒','用量覆盖','返回输入 Token','返回输出 Token','采用领域建议'],kevRows),el('p','用量分别读取实际返回的 input/output 或 prompt/completion 字段；零调用及缺失用量显示 —。不与 Qwen 合算 GPU 计算时间、能耗或金额。','caption'));
+ if(records.some(r=>r.raw.variant==='Qwen_only')&&!$('development-note')){const note=el('p',`新工作流 ${records.filter(r=>['Qwen_only','Kev_route','Kev_scope'].includes(r.raw.variant)).length} 轮属于开发回归集，三组使用相同代码。不同批次的案例和条件可能不同，不能直接据表计算准确率或速度提升。评价来源以逐条记录为准，AI评价仍需人工确认。`,'notice');note.id='development-note';$('overview').before(note);}
+}
+function filtered() {
+ const text=$('search').value.trim().toLowerCase(),run=$('run-filter').value,variant=$('variant-filter').value,category=$('category-filter').value,alert=$('alert-filter').value;
+ return records.filter(item=>{
+  const r=item.raw,manual=review(item);
+  if(run&&item.run!==run||variant&&r.variant!==variant||category&&r.category!==category) return false;
+  if(text&&!`${r.id} ${r.question} ${r.reply}`.toLowerCase().includes(text)) return false;
+  if(alert==='any') return item.alerts.length>0;
+  if(alert==='fault') return Object.keys(r.faults||{}).length>0;
+  if(alert==='pending') return typeof manual.task_completed!=='boolean';
+  if(alert==='reviewed') return typeof manual.task_completed==='boolean';
+  if(alert==='review-task-fail') return manual.task_completed===false;
+  if(alert==='review-flow-fail') return manual.workflow_correct===false;
+  if(alert==='review-citation-fail') return manual.citation_correct===false;
+  if(alert==='ai-review') return manual.review_source==='assistant';
+  return !alert||item.alerts.some(a=>a.kind===alert);
+ });
+}
+function renderList() {
+ const shown=filtered();$('list-count').textContent=`${shown.length} / ${records.length} 条记录`;
+ const list=$('case-list');list.replaceChildren();
+ for(const item of shown) {
+  const r=item.raw,button=el('button',undefined,'case-item'+(selected===item.key?' active':''));
+  append(button,el('strong',`${r.case_id} · 第 ${(r.turn||0)+1} 轮 · ${r.variant}`),el('div',r.question,'question'),
+    el('div',`${r.category} · HTTP ${r.http_status} · ${num(r.latency_seconds)} 秒`,'muted'));
+  button.append(tag(item.alerts.length?`${item.alerts.length} 项提示`:'无自动警示',item.alerts.length?'warn':'unknown'));
+  button.append(tag(typeof review(item).task_completed==='boolean'?(review(item).review_source==='assistant'?'AI初审':'已审核'):'待审核',review(item).review_source==='assistant'?'warn':typeof review(item).task_completed==='boolean'?'good':'unknown'));
+  if(typeof review(item).task_completed==='boolean')button.append(tag(review(item).task_completed?'任务完成':'任务未完成',review(item).task_completed?'unknown':'bad'));
+  button.onclick=()=>select(item.key);list.append(button);
+ }
+ if(!shown.length) list.append(el('div','没有符合筛选条件的记录。','empty'));
+}
+function select(key) { selected=key;renderList();renderDetail(); }
+function renderDetail() {
+ const root=$('detail');root.replaceChildren();
+ const item=records.find(r=>r.key===selected);if(item&&filtered().length)root.append(caseDocument(item,true));
+ else root.append(el('div','没有符合筛选条件的记录。','panel empty'));
+ if(allMode)renderAll();
+}
+function wrapTable(headers,rows) {return append(el('div',undefined,'table-wrap'),makeTable(headers,rows));}
+function stage(title,parent,text) {parent.append(el('h3',title));if(text)parent.append(el('p',text,'caption'));}
+function verdict(value,negative=false) {
+ if(typeof value!=='boolean')return tag('未审核 / 不适用','unknown');
+ return tag(value?'是':'否',(negative?!value:value)?'good':'bad');
+}
+function caseHistory(item) {
+ const r=item.raw;
+ return records.filter(x=>x.run===item.run&&x.raw.variant===r.variant&&x.raw.case_id===r.case_id&&x.raw.repeat===r.repeat&&x.raw.turn<r.turn).sort((a,b)=>a.raw.turn-b.raw.turn);
+}
+function usageText(usage) {
+ if(!usage)return '未记录';
+ // Kev may report input_tokens/output_tokens while the legacy aggregate is unknown.
+ return Object.entries(usage).filter(([,v])=>typeof v==='number').map(([k,v])=>`${k}: ${v}`).join(' · ')||'未记录';
+}
+const choiceLabels={customer_service:'客服新查询',conversation_recall:'回顾会话',unrelated:'无关任务',dangerous:'危险 / 越权',unclear:'信息不足',orders:'订单 / 物流 / 退款',product:'商品 / 价格库存 / 政策',mixed:'跨领域协作',chat:'普通对话 / 改写'};
+function kevView(r) {
+ const root=el('div',undefined,'kev-view'),calls=r.kev_calls||[];
+ if(!calls.length){root.append(el('p','本轮未记录 Kev 调用；A / B 未启用 Kev。','muted'));return root;}
+ for(const [i,call] of calls.entries()) {
+  const result=call.result||{},card=el('div',undefined,'event');
+  append(card,el('strong',`${i+1}. ${call.mode==='scope'?'入口范围分类':'领域路由建议'} · ${result.model||'模型未记录'}`),
+   el('p',`选择 ${result.choice||'—'}（${choiceLabels[result.choice]||'未知'}） · 置信度 ${num(result.confidence,4)} · HTTP ${call.http_status??'—'} · ${num(call.seconds,4)} 秒`));
+  if(call.mode==='scope')card.append(el('p',`实际范围决策：${r.decision?.scope?.status||'未记录'}${r.decision?.scope?.reason?' · '+r.decision.scope.reason:''}`));
+  else card.append(el('p',`领域建议是否被采用：${typeof result.advisory_accepted==='boolean'?(result.advisory_accepted?'是':'否'):'未记录'}`));
+  const rows=Object.entries(result.probabilities||{}).map(([key,value])=>{
+   const cell=el('div'),bar=el('div',undefined,'probability'),fill=el('span');
+   fill.style.width=(typeof value==='number'?Math.max(0,Math.min(1,value))*100:0)+'%';bar.append(fill);
+   append(cell,el('div',`${num(typeof value==='number'?value*100:null,3)}%`),bar);
+   return [key,choiceLabels[key]||'未提供说明',cell,key===result.choice?'已选择':''];
+  });
+  if(rows.length)card.append(wrapTable(['返回选项','选项含义','原始概率','选择'],rows));
+  append(card,el('p','服务返回用量：'+usageText(call.usage),'caption'),jsonDetail('本次 Kev 原始记录（含全部精度）',call));root.append(card);
+ }
+ root.append(el('p','confidence 与所选项 probability 是服务返回的不同字段，分别原样展示。scope 的 advisory_accepted=false 不表示范围未生效；入口是否放行以上方实际范围决策为准。','caption'));
+ return root;
+}
+function toolsView(r) {
+ const root=el('div',undefined,'tool-view'),attempts=r.tool_attempts||[],trace=r.tool_calls||[],used=new Set();
+ // Match identical name+arguments in occurrence order, never by local step alone.
+ const signature=call=>{let args=call.arguments;try{args=typeof args==='string'?JSON.parse(args):args;}catch{}return pretty([call.name,args]);};
+ const matched=trace.map(call=>{
+  const index=attempts.findIndex((a,i)=>!used.has(i)&&signature(a)===signature(call));
+  if(index>=0)used.add(index);return {call,attempt:index>=0?attempts[index]:null,index};
+ });
+ if(!trace.length)root.append(el('p',attempts.length?'没有已完成工具轨迹；下方保留请求结束前的尝试。':'本轮没有工具轨迹或工具尝试记录。','muted'));
+ for(const [i,{call,attempt,index}] of matched.entries()) {
+  const card=el('details');card.className='tool-card';
+  card.append(el('summary',`${i+1}. ${call.agent||'角色未记录'} → ${call.name} · ${call.result?.ok===true?'工具成功':call.result?.ok===false?'工具失败':'状态未知'} · 耗时 ${num(attempt?.seconds,4)} 秒 · 局部 step ${call.step??'—'}`));
+  let args=call.arguments;try{args=typeof args==='string'?JSON.parse(args):args;}catch{}
+  append(card,el('h3','调用参数'),el('pre',pretty(args)),el('h3','工具完整返回'),el('pre',pretty(call.result)),
+    el('p',attempt?`耗时来自工具尝试 #${index+1}，按相同工具名和参数的出现顺序关联；未记录独立全局开始/结束时间。`:'未匹配到相同参数的耗时记录，不能推算。','caption'));
+  const evidence=Object.fromEntries(Object.entries(call).filter(([k])=>!['name','arguments','result','agent','step'].includes(k)));
+  if(Object.keys(evidence).length)card.append(jsonDetail('证据绑定 / 观察时间 / 其他完整字段',evidence,true));
+  if(attempt)card.append(jsonDetail('对应尝试原件',attempt));root.append(card);
+ }
+ const unmatched=attempts.map((attempt,i)=>({attempt,i})).filter(({i})=>!used.has(i));
+ for(const {attempt,i} of unmatched)root.append(jsonDetail(`未关联尝试 #${i+1} · ${attempt.name} · ${num(attempt.seconds,4)} 秒`,attempt));
+ root.append(jsonDetail('工具尝试原始数组（顺序及字段完整保留）',attempts));return root;
+}
+function reviewView(item,editable) {
+ const r=item.raw,values=review(item),panel=section('05 · AI 评价与复核');
+ panel.classList.add('review-panel');
+ append(panel,tag(values.review_source==='assistant'?'AI 初审':values.review_source==='human'?'人工复核':'审核来源未注明',values.review_source==='assistant'?'warn':'unknown'),
+  el('p',`审核者：${values.reviewer||'未填写'} · 标注版本：${values.review_version||'未记录'}`,'caption'));
+ if(values.review_source==='assistant')panel.append(el('p','AI 根据原始回复、执行日志和合成基准进行事后初审，尚需人工复核；这不是独立人工盲评，也没有重新运行被测模型。','notice'));
+ panel.append(wrapTable(['评价维度','判断'],fields.map(([key,label])=>[label,verdict(values[key],key==='false_refusal')])));
+ append(panel,el('h3','评价依据'),el('div',values.notes||'尚无评价依据。','review-notes'));
+ if(values.borderline)panel.append(el('p','边界案例：当前结论依赖审核口径，请优先人工确认。','notice'));
+ if(values.subtasks?.length)panel.append(wrapTable(['初审检查项','判断'],values.subtasks.map(s=>[s.name,verdict(s.completed)])));
+ if(values.unsupported_claims?.length)panel.append(jsonDetail('初审指出的无依据陈述',values.unsupported_claims,true));
+ panel.append(jsonDetail('完整审核数据（含来源、版本及其他字段）',values));
+ if(!editable)return panel;
+ const editor=el('details',undefined,'review-editor');editor.append(el('summary','修改逐轮标注 / 人工复核'));
+ const form=el('div',undefined,'review-grid');
+ for(const [key,label] of fields) {
+  const select=el('select');option(select,'','未审核 / 不适用');option(select,'true',key==='false_refusal'?'是，有误拒答':'是');option(select,'false',key==='false_refusal'?'否，无误拒答':'否');
+  select.value=typeof values[key]==='boolean'?String(values[key]):'';
+  select.onchange=()=>updateReview(item,key,select.value===''?null:select.value==='true');append(form,append(el('label',label),select));
+ }
+ editor.append(form);
+ const source=el('select');option(source,'','未注明来源');option(source,'assistant','AI 初审');option(source,'human','人工复核');source.value=values.review_source||'';source.onchange=()=>updateReview(item,'review_source',source.value||null);append(editor,append(el('label','审核来源（人工复核后再修改）'),source));
+ const reviewer=el('input');reviewer.value=values.reviewer||'';reviewer.placeholder='审核者姓名或代号';reviewer.onchange=()=>updateReview(item,'reviewer',reviewer.value.trim()||null);append(editor,append(el('label','审核者'),reviewer));
+ const notes=el('textarea');notes.value=values.notes||'';notes.onchange=()=>updateReview(item,'notes',notes.value);append(editor,append(el('label','判断依据 / 错误说明'),notes));
+ editor.append(el('p','false_refusal=true 代表存在误拒答；其他布尔项 true 代表该维度符合要求。未审核 / 不适用不计入该维度分母。','caption'));
+ panel.append(editor);
+ const navigation=el('div',undefined,'toolbar'),shown=filtered(),position=shown.findIndex(x=>x.key===selected);
+ for(const [delta,label] of [[-1,'上一条'],[1,'下一条']]){const button=el('button',label);button.disabled=position<0||!shown[position+delta];button.onclick=()=>select(shown[position+delta].key);navigation.append(button);}
+ const raw=el('button','下载本轮原始 JSON');raw.onclick=()=>download(`${r.case_id}-${r.variant}-turn${r.turn+1}.json`,pretty(r),'application/json');navigation.append(raw);panel.append(navigation);return panel;
+}
+function caseDocument(item,editable=false) {
+ const root=el('div',undefined,'case-document'),r=item.raw,run=runs.get(item.run);
+ const info=section('01 · 输入与上下文');
+ append(info,el('h3',`${r.case_id} · 第 ${(r.turn||0)+1} 轮 · ${r.variant}`),el('div',r.question,'reply full-reply input-question'),
+  el('p',`${run.label} · ${r.category} · 记录 ID ${r.id} · repeat ${r.repeat??'—'}`,'caption'),el('p',`会话 ID ${r.session_id||'未记录'}`,'caption'));
+ for(const alert of item.alerts)info.append(tag(alert.text,'warn'));
+ const history=caseHistory(item);
+ if(history.length){const context=el('details');context.open=true;context.append(el('summary','此前实际用户输入与回答'));
+  for(const prior of history)append(context,el('h3',`第 ${prior.raw.turn+1} 轮输入`),el('div',prior.raw.question,'reply'),el('h3','当轮回答'),el('div',prior.raw.reply||prior.raw.error||'未返回回答','reply'));info.append(context);
+ }else info.append(el('p','当前案例首轮，无此前轮次。','caption'));
+ root.append(info);
+ const golden=section('02 · 预期与测试条件');
+ append(golden,el('p',item.expected?.notes||'没有匹配的流程清单，请结合原问题与基准资料审核。'),
+  jsonDetail('固定案例要求与数值标签',r.golden||{},true));
+ if(item.expected)golden.append(jsonDetail('预期角色 / 必要工具 / 依赖顺序',item.expected,true));
+ golden.append(jsonDetail('故障注入条件（新工作流测试不注入故障）',r.faults||{},Object.keys(r.faults||{}).length>0));
+ const mutations=[...caseHistory(item),item].filter(x=>x.raw.fixture_mutation).map(x=>({turn:x.raw.turn+1,change:x.raw.fixture_mutation}));if(mutations.length)append(golden,el('p','本会话含标注的合成价格变更，仅测试准备程序修改独立副本，用于验证实时重查；下面的原始基准是变更前数据。','notice'),jsonDetail('截至本轮的测试数据变更',mutations,true));
+ golden.append(jsonDetail('运行设置（不含本机路径及服务地址）',{model:run.model,temperature:run.temperature,max_tokens:run.max_tokens,variant_configuration:run.variant_configuration,agent_limits:run.agent_limits,protocol:run.protocol}));
+ if(!run.expectations_matched)golden.append(el('p','此批次案例哈希未匹配流程清单，不自动检查必要工具与角色。','notice'));
+ if(!run.reference_matched)golden.append(el('p','此批次未匹配下方参考数据库哈希，不将其作为本批权威答案。','notice'));root.append(golden);
+ const flow=section('03 · 实际流程和过程数据'),metrics=el('div',undefined,'metric-grid');
+ const controls=el('div',undefined,'toolbar');
+ for(const [open,label] of [[true,'展开本轮全部过程数据'],[false,'收起本轮过程数据']]){const button=el('button',label);button.onclick=()=>{for(const detail of flow.querySelectorAll('details'))detail.open=open;};controls.append(button);}flow.append(controls);
+ const sumSeconds=calls=>calls.reduce((sum,c)=>sum+(typeof c.seconds==='number'?c.seconds:0),0);
+ for(const [name,value] of [['整轮请求',num(r.latency_seconds,3)+' 秒'],['Qwen 调用',`${(r.model_calls||[]).length} 次 / ${num(sumSeconds(r.model_calls||[]),3)} 秒`],['Kev 调用',`${(r.kev_calls||[]).length} 次 / ${num(sumSeconds(r.kev_calls||[]),3)} 秒`],['工具尝试',`${(r.tool_attempts||[]).length} 次 / ${num(sumSeconds(r.tool_attempts||[]),4)} 秒`]])append(metrics,append(el('div',undefined,'metric'),el('span',name,'caption'),el('strong',value)));
+ flow.append(metrics);flow.append(el('p','各调用耗时为记录中的墙钟时间之和，可能与整轮耗时重叠，不当作可相加的分段耗时。step 是角色局部轮次，未记录全局节点时间戳。','caption'));
+ const steps=el('div',undefined,'steps');steps.append(el('span','用户输入'));
+ if((r.kev_calls||[]).some(c=>c.mode==='scope'))steps.append(el('span','Kev 范围：'+(r.decision?.scope?.status||'未记录')));
+ if((r.kev_calls||[]).some(c=>c.mode==='advisory'))steps.append(el('span','Kev 领域建议'));
+ for(const event of r.agent_events||[])steps.append(el('span',`${event.agent} · ${event.status}`));
+ if(!(r.agent_events||[]).length)steps.append(el('span',r.decision?.scope?.status==='blocked'?'入口已拦截':'无委派事件记录'));
+ steps.append(el('span',r.http_status===200?'最终回复':'请求失败'));flow.append(steps);
+ flow.append(el('p','上图将入口决策与 Agent 完成事件按处理阶段和事件记录顺序列出，供导航使用；工具和模型各自的记录顺序见下方，不能推断未保存的交错时序。','caption'));
+ stage('3.1 · Kev 分类及所有返回选项',flow);flow.append(kevView(r));
+ flow.append(jsonDetail('完整入口范围 / 路由决策（旧批次可能未记录）',r.decision||{}));
+ stage('3.2 · Agent 委派与完成状态',flow);
+ if((r.agent_events||[]).length)flow.append(wrapTable(['顺序','Agent','委派任务','完成状态','工具数','工具执行状态'],r.agent_events.map((e,i)=>[i+1,e.agent,e.task,e.status,e.tool_count,e.execution_state])));
+ else flow.append(el('p','没有委派记录。','muted'));
+ flow.append(jsonDetail('Agent 事件完整原件',r.agent_events||[]));if(r.memories)flow.append(jsonDetail('本轮提交后的显式会话记忆',r.memories,true));
+ stage('3.3 · 工具调用、参数、完整返回与证据',flow,'依次展开每个工具，查看完整参数、返回内容及对应尝试耗时；包含失败和未关联尝试。');flow.append(toolsView(r));
+ stage('3.4 · Qwen 模型每次调用及用量',flow);
+ flow.append(wrapTable(['调用顺序','Agent / 阶段','开始时间','耗时（秒）','返回模型','输入 Token','输出 Token','总 Token','错误 / 停止原因'],(r.model_calls||[]).map((c,i)=>[i+1,c.agent_context?`${c.agent_context.agent} / ${c.agent_context.phase}`:'未记录',c.started_at,num(c.seconds,4),c.model,c.usage?.prompt_tokens,c.usage?.completion_tokens,c.usage?.total_tokens,c.error_type||c.finish_reason])));
+ flow.append(el('p',(r.model_calls||[]).some(c=>c.request)?'本批记录包含真实模型请求与返回。展开下方每次调用原件查看 messages、tools、final / required_tool、响应及角色；失败调用也保留。':'本批未保存完整模型消息或所属角色，不能推断缺失字段。失败调用同样保留。','caption'));
+ append(flow,jsonDetail('Qwen 每次调用完整原件',r.model_calls||[]),jsonDetail('原始用量汇总与完整性',{qwen:r.tokens,kev:r.kev_tokens??'旧批次未记录'}),
+  el('p','Kev 每次调用若报告 input_tokens / output_tokens，会在 3.1 原样显示；旧汇总 complete=false 仍保留，不擅自视为完整统一 Token 成本。未测量 GPU 显存、能耗或金额。','caption'));
+ stage('3.5 · 流程结构与服务端证据验证',flow);
+ if(item.workflow_checks.length)flow.append(wrapTable(['结构检查','结果','说明'],item.workflow_checks.map(c=>[c.label,tag(c.ok?'满足':'待排查',c.ok?'good':'warn'),c.detail])));
+ flow.append(el('p','结构检查只提供线索。完整的参数、实体、依赖、失败处理是否合理，见第 05 节逐条评价。','caption'));
+ flow.append(jsonDetail('服务端最终验证信息（不等于独立语义核验）',r.verification||{}));
+ stage('3.6 · 自动检查与原始数据',flow);
+ append(flow,jsonDetail('必需 / 禁止关键词命中',r.automatic_checks||{}),jsonDetail('回答中独立解析的价格库存校验',r.independent_catalog_checks||[]),jsonDetail('本轮完整原始 JSON（不裁剪字段）',r));root.append(flow);
+ const output=section('04 · 最终输出');
+ append(output,tag('HTTP '+r.http_status,r.http_status===200?'unknown':'bad'),el('div',r.reply||r.error||'未返回回答','reply full-reply final-output'));
+ if(r.error)output.append(jsonDetail('接口错误信息',r.error,true));
+ if(editable){
+  const comparison=el('details');comparison.append(el('summary','同一样例 · 各版本回答对照'));
+  const peers=records.filter(x=>x.raw.case_id===r.case_id&&x.raw.turn===r.turn&&x.raw.repeat===r.repeat),grid=el('div',undefined,'compare-grid');
+  for(const peer of peers){const p=peer.raw,card=el('div',undefined,'compare-card'+(peer.key===item.key?' selected':'')),button=el('button','查看此版本记录');button.onclick=()=>select(peer.key);
+   append(card,el('strong',`${p.variant} · ${runs.get(peer.run).label}`),el('div',`${num(p.latency_seconds)} 秒 · HTTP ${p.http_status}`,'caption'),tag((review(peer).review_source==='assistant'?'AI 初审：':'审核：')+(typeof review(peer).task_completed!=='boolean'?'未审核':review(peer).task_completed?'任务完成':'任务未完成'),review(peer).task_completed===false?'bad':'unknown'),el('div',p.reply||p.error||'未返回回答','reply'),button);grid.append(card);
+  }comparison.append(grid);output.append(comparison);
+ }
+ root.append(output,reviewView(item,editable));return root;
+}
+function renderAll() {
+ const shown=filtered(),list=$('all-list');list.replaceChildren();$('all-count').textContent=`${shown.length} / ${records.length} 条完整记录`;
+ for(const item of shown){const r=item.raw,node=el('details',undefined,'all-case'),summary=el('summary');
+  append(summary,el('strong',`${r.case_id} · 第 ${r.turn+1} 轮 · ${r.variant} · `),el('span',r.question),tag(review(item).task_completed===true?'任务完成':review(item).task_completed===false?'任务未完成':'未审核',review(item).task_completed===false?'bad':'unknown'));
+  node.append(summary);let loaded=false;
+  node.addEventListener('toggle',()=>{if(node.open&&!loaded){node.append(caseDocument(item));loaded=true;}});list.append(node);
+ }
+ if(!shown.length)list.append(el('p','没有符合筛选的记录。','empty'));
+}
+function download(filename,text,type='application/x-ndjson') { const url=URL.createObjectURL(new Blob([text],{type})),a=el('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000); }
+function renderReference() {
+ const root=$('reference');if(!DATA.reference){root.textContent='未附加基准数据库。生成报告时可使用 --dataset 指定原始合成数据目录。';return;}
+ root.append(jsonDetail('合成数据清单与哈希',DATA.reference.manifest));
+ const labels={users:'合成用户',products:'商品价格库存',orders:'订单',order_items:'订单商品关联',payments:'支付',shipments:'物流',refunds:'退款',tickets:'工单',knowledge_chunks:'知识原文'};
+ for(const [name,rows] of Object.entries(DATA.reference.tables)) {
+  const node=el('details');node.append(el('summary',`${labels[name]||name} · ${rows.length} 条`));
+  if(rows.length){const wrap=el('div',undefined,'table-wrap'),keys=Object.keys(rows[0]);wrap.append(makeTable(keys,rows.map(row=>keys.map(key=>typeof row[key]==='object'?pretty(row[key]):row[key]))));node.append(wrap);}
+  else node.append(el('p','无记录。','muted'));root.append(node);
+ }
+}
+for(const [id,values] of [['run-filter',DATA.runs.map(r=>[r.id,r.label])],['variant-filter',[...new Set(records.map(r=>r.raw.variant))].map(v=>[v,v])],['category-filter',[...new Set(records.map(r=>r.raw.category))].sort().map(v=>[v,v])]]) {
+ option($(id),'','全部');for(const [value,label] of values)option($(id),value,label);
+}
+for(const run of DATA.runs)option($('export-run'),run.id,run.label);
+for(const id of ['search','run-filter','variant-filter','category-filter','alert-filter'])$(id).addEventListener(id==='search'?'input':'change',()=>{const shown=filtered();if(shown.length&&!shown.some(x=>x.key===selected))selected=shown[0].key;renderList();renderDetail();});
+$('view-toggle').onclick=()=>{allMode=!allMode;document.querySelector('.workspace').classList.toggle('hidden',allMode);$('all-records').classList.toggle('hidden',!allMode);$('view-toggle').textContent=allMode?'返回单例审阅':'连续浏览全部样例';if(allMode)renderAll();};
+$('expand-all').onclick=()=>{for(const node of $('all-list').children)if(node.tagName==='DETAILS')node.open=true;};
+$('collapse-all').onclick=()=>{for(const node of $('all-list').children)if(node.tagName==='DETAILS')node.open=false;};
+$('reset').onclick=()=>{for(const id of ['search','run-filter','variant-filter','category-filter','alert-filter'])$(id).value='';renderList();renderDetail();};
+$('export').onclick=()=>{
+ const run=$('export-run').value,group=records.filter(r=>r.run===run);
+ if(group.some(item=>fields.some(([key])=>typeof review(item)[key]==='boolean')&&!review(item).reviewer)){alert('请为已审核的记录填写审核者。');return;}
+ const lines=group.map(item=>JSON.stringify({id:item.raw.id,manual_review:review(item)})).join('\n')+'\n';download(runs.get(run).label+'-reviews.jsonl',lines);
+};
+$('import').onchange=async event=>{
+ const file=event.target.files[0];if(!file)return;
+ try {
+  const group=records.filter(r=>r.run===$('export-run').value),byId=new Map(group.map(r=>[r.raw.id,r])),items=(await file.text()).split(/\r?\n/).filter(line=>line.trim()).map(line=>JSON.parse(line)),seen=new Set();
+  for(const item of items){if(!byId.has(item.id)||seen.has(item.id)||!item.manual_review||typeof item.manual_review!=='object')throw new Error('存在未知、重复 ID 或无效审核对象');seen.add(item.id);for(const [key] of fields)if(item.manual_review[key]!==undefined&&item.manual_review[key]!==null&&typeof item.manual_review[key]!=='boolean')throw new Error('审核字段必须为 true、false 或 null');}
+  for(const item of items)reviews[byId.get(item.id).key]=item.manual_review;
+  save();renderOverview();renderList();renderDetail();alert(`已导入 ${items.length} 条审核。`);
+ } catch(error){alert('导入失败：'+error.message);}finally{event.target.value='';}
+};
+save();renderOverview();renderList();renderDetail();renderReference();
+</script>
+</body>
+</html>

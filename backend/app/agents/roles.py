@@ -7,7 +7,7 @@ from app.services.tools import TOOL_SCHEMAS
 
 class Delegation(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, str_strip_whitespace=True)
-    task: str = Field(min_length=2, max_length=800, description='自包含的具体子任务，包含已知标识和必要约束，不能把内部记录或个人信息传给资讯 Agent。')
+    task: str = Field(min_length=2, max_length=800, description='自包含的具体子任务，包含已知标识和必要约束，仅传递完成任务所需的信息。')
 
 
 ROLES = {
@@ -19,17 +19,12 @@ ROLES = {
         'label': '商品 Agent',
         'tools': {'knowledge_search', 'catalog_search', 'calculator'},
         'prompt': '你是商品 Agent。负责商品功能、兼容性、选品、价格库存和商店政策。利用交接商品 ID 检索，引用 [KB-标识] 与来源；价格库存查 SQL。委派任务同时要求功能和价格库存时，必须分别调用 knowledge_search 和 catalog_search，不能漏掉其中一项。区别候选和符合要求的商品，保留不确定性。逐项依据原始片段报告功能，明确保留“不支持”等限制；没有依据的夜视、对焦、语音等能力不能自行补充。'},
-    'research': {
-        'label': '资讯 Agent',
-        'tools': {'web_search', 'current_time'},
-        'prompt': '你是公开资讯 Agent。仅检索外部公开资讯，提供来源链接。不要查询订单、支付、物流单号、用户身份等内部信息；遇到此类委派应拒绝并说明。只能依据本次搜索结果说明当前外部事实。'},
 }
 UTILITY_TOOLS = {'calculator', 'current_time', 'memory_set', 'memory_list', 'memory_delete'}
 HANDOFFS = {f'delegate_{role}': role for role in ROLES}
 DESCRIPTIONS = {
     'orders': '委派订单 Agent 查询本人订单、支付、物流、退款和工单；不处理商品知识。',
     'product': '委派商品 Agent 检索商品知识、商店政策，查询商品价格库存与选品。若涉及已购商品，先委派订单 Agent 取得商品 ID。',
-    'research': '委派资讯 Agent 查询外部公开的近期信息。任务仅含公开主题，禁止传递用户身份、订单/支付/物流标识和内部记录。',
 }
 SUPERVISOR_SCHEMAS = [item for item in TOOL_SCHEMAS if item['function']['name'] in UTILITY_TOOLS] + [
     {'type': 'function', 'function': {'name': name, 'description': DESCRIPTIONS[role],

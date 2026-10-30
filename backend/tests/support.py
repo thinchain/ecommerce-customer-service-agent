@@ -15,6 +15,8 @@ class IsolatedSettings:
             with patch.dict(os.environ, {}, clear=True):
                 root = Path(directory)
                 settings = Settings(_env_file=None, memory_db_path=root/'memory.sqlite3',
+                                    structured_routing=False,
+                                    natural_response_enabled=False,
                                     commerce_db_path=root/'commerce.sqlite3',
                                     knowledge_db_path=root/'knowledge.sqlite3', chroma_path=root/'chroma')
             with override_settings(settings):

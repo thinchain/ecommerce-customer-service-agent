@@ -6,7 +6,7 @@
 flowchart TD
   UI[电商客服界面] --> API[FastAPI /api/chat]
   API --> Agent[LangGraph 协调 Agent]
-  Agent --> Workers[订单 / 商品 / 资讯 Agent 子图]
+  Agent --> Workers[订单 / 商品 Agent 子图]
   Workers --> Runtime[统一工具运行层]
   Runtime --> Local[进程内调用]
   Runtime --> MCP[MCP stdio Client / Server]
@@ -16,13 +16,12 @@ flowchart TD
   Business --> RAG[RAG 检索]
   RAG --> FTS[离线 FTS5]
   RAG --> Vector[Embedding 服务 + Chroma]
-  Agent --> Web[DDGS 公共资讯]
-  Agent --> History[历史执行摘要 + 用户显式偏好]
+  Agent --> History[会话历史 + 用户显式偏好]
 ```
 
 ## LangGraph 多 Agent
 
-当前已按多 Agent 需求引入 LangGraph：协调 Agent 负责拆解与汇总，订单、商品、资讯 Agent 使用各自的提示词、工具白名单和 ReAct 子图。各 Agent 共享已有 Qwen 服务，按需顺序执行。实现、图结构与预算见 [多 Agent 文档](multi-agent.md)。
+当前已按多 Agent 需求引入 LangGraph：协调 Agent 负责拆解与汇总，订单、商品 Agent 使用各自的提示词、工具白名单和 ReAct 子图。各 Agent 共享已有 Qwen 服务，按需顺序执行。实现、图结构与预算见 [多 Agent 文档](multi-agent.md)。
 
 会话仍使用 SQLite 保存，未启用 LangGraph checkpointer，不具备执行中途的崩溃恢复或审批恢复。后续加入这类能力时需同时设计恢复接口与动作幂等性。
 
@@ -47,12 +46,12 @@ MCP 使用[官方 Python SDK](https://github.com/modelcontextprotocol/python-sdk
 
 ## 记忆与失败处理
 
-完整回答及工具结果保留在会话日志。传给模型时附带工具名、成功状态、historical_turn_only 范围；如果该轮所有非记忆工具均失败，则用中性的历史执行记录替换失败文案。混合成功/失败保留回答与执行摘要，不武断认定整个任务失败。
+完整回答、工具结果与执行状态保留在会话日志。常规模型上下文按预算选取获准的原始问答对，不改写历史回答；被范围校验拒绝的轮次不回放。
 
-取消搜索专用关键词和强制 web_search。普通改写重试不需要联网，工具选择由当前任务决定。长期记忆只存用户显式要求的稳定偏好；模型接口错误不提交成功对话。旧的无工具轨迹回答不靠文本猜测分类。此机制减少错误复述，但不承诺模型永远正确选工具；执行状态也不等于任务完成状态。
+长期记忆只存用户显式要求的稳定偏好；模型接口错误不提交本轮对话与记忆。当前业务查询依据本轮工具证据，历史回顾使用独立的只读路径。执行状态不等于任务完成状态。
 
 ## 验证范围
 
-回归覆盖 SQL 注入参数、用户归属、关系数据与金额、RAG 来源/过滤/重复导入、真实 Chroma 存取、真实 MCP stdio 握手和工具调用、模拟模型 SQL+RAG 多轮流程、连续失败后恢复和无工具重试。
+回归覆盖 SQL 注入参数、用户归属、关系数据与金额、RAG 来源/过滤/重复导入、真实 Chroma 存取、真实 MCP stdio 握手和工具调用、模拟模型 SQL+RAG 多轮流程、原始历史保留和会话失败回滚。
 
 `evaluate_rag.py` 是小型合成语料检索回归，报告 Hit@4/MRR@4；不能据此宣称真实语义检索或客服正确率。Bitext 转换器仅输出支持意图的工具选择评测参考，未训练路由分类器。生产级审批状态机、授权、退款执行、长期记忆自动总结及真实数据规模评测均不在首版内。
