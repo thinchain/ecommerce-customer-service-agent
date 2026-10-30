@@ -1,0 +1,450 @@
+{
+  "version": 1,
+  "cases_sha256": "83f4e96ab058d54bb754649592f53c5ad0d146dcbbaa3c5bd0be8b54f89ce91b",
+  "purpose": "Post-run review checklist, not an independently held-out benchmark or an automatic semantic judge.",
+  "turns": {
+    "p01:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "核对目标实体、金额单位、零库存与筛选条件；名称或候选列表不等于实体已经识别正确。"
+    },
+    "p02:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "核对目标实体、金额单位、零库存与筛选条件；名称或候选列表不等于实体已经识别正确。"
+    },
+    "p03:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "核对目标实体、金额单位、零库存与筛选条件；名称或候选列表不等于实体已经识别正确。"
+    },
+    "p04:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "核对目标实体、金额单位、零库存与筛选条件；名称或候选列表不等于实体已经识别正确。"
+    },
+    "p05:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "核对目标实体、金额单位、零库存与筛选条件；名称或候选列表不等于实体已经识别正确。"
+    },
+    "p06:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "核对目标实体、金额单位、零库存与筛选条件；名称或候选列表不等于实体已经识别正确。"
+    },
+    "p07:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "核对目标实体、金额单位、零库存与筛选条件；名称或候选列表不等于实体已经识别正确。"
+    },
+    "p08:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "核对目标实体、金额单位、零库存与筛选条件；名称或候选列表不等于实体已经识别正确。"
+    },
+    "m01:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "价格库存与知识问题均需处理；知识原文的条件、否定及所属商品应对应正确。"
+    },
+    "m02:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "价格库存与知识问题均需处理；知识原文的条件、否定及所属商品应对应正确。"
+    },
+    "m03:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "价格库存与知识问题均需处理；知识原文的条件、否定及所属商品应对应正确。"
+    },
+    "m04:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "价格库存与知识问题均需处理；知识原文的条件、否定及所属商品应对应正确。"
+    },
+    "m05:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "价格库存与知识问题均需处理；知识原文的条件、否定及所属商品应对应正确。"
+    },
+    "o01:0": {
+      "expected_agents": [
+        "orders",
+        "product"
+      ],
+      "required_tools": [
+        "order_detail",
+        "catalog_search"
+      ],
+      "ordered_tools": [
+        [
+          "order_detail",
+          "catalog_search"
+        ]
+      ],
+      "notes": "订单问题必须实际尝试订单查询，不能用商品结果替代；失败或无权限部分需说明，同时保留有效商品结果。"
+    },
+    "o02:0": {
+      "expected_agents": [
+        "orders",
+        "product"
+      ],
+      "required_tools": [
+        "order_detail",
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "订单问题必须实际尝试订单查询，不能用商品结果替代；失败或无权限部分需说明，同时保留有效商品结果。"
+    },
+    "o03:0": {
+      "expected_agents": [
+        "orders",
+        "product"
+      ],
+      "required_tools": [
+        "order_detail",
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "订单问题必须实际尝试订单查询，不能用商品结果替代；失败或无权限部分需说明，同时保留有效商品结果。"
+    },
+    "o04:0": {
+      "expected_agents": [
+        "orders",
+        "product"
+      ],
+      "required_tools": [
+        "order_detail",
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "订单问题必须实际尝试订单查询，不能用商品结果替代；失败或无权限部分需说明，同时保留有效商品结果。"
+    },
+    "o05:0": {
+      "expected_agents": [
+        "orders",
+        "product"
+      ],
+      "required_tools": [
+        "order_detail",
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [
+        [
+          "order_detail",
+          "catalog_search"
+        ],
+        [
+          "order_detail",
+          "knowledge_search"
+        ]
+      ],
+      "notes": "先查订单取得实际商品 ID，再查该商品价格库存与 Windows 兼容性；需覆盖物流、数值和兼容性三部分。"
+    },
+    "h01:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "多轮案例按轮次审核；当前轮只允许继承实体，不能用历史数值冒充新查询。"
+    },
+    "h02:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "多轮案例按轮次审核；当前轮只允许继承实体，不能用历史数值冒充新查询。"
+    },
+    "h03:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "多轮案例按轮次审核；当前轮只允许继承实体，不能用历史数值冒充新查询。"
+    },
+    "h01:1": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "“现在价格”要求新查询，不能只复述历史值。"
+    },
+    "h02:1": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "解析“它”为上轮耳机；不支持同时双设备，不能把否定条件改成支持。"
+    },
+    "h03:1": {
+      "expected_agents": null,
+      "required_tools": [],
+      "ordered_tools": [],
+      "notes": "上轮有两个商品，“它”存在歧义，应澄清；不要求固定 Agent 集合，由审核者判断是否擅自选定商品。"
+    },
+    "h04:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "键盘支持 macOS，属于正常商品咨询，不能误判为无关请求。"
+    },
+    "h04:1": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "解析上轮键盘实体并查询当前价格库存；注意上一轮误拦截可能导致后续上下文缺失。"
+    },
+    "r01:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "依据知识原文核对否定、限制或政策条件；有充分依据却拒答属于误拒答。"
+    },
+    "r02:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "依据知识原文核对否定、限制或政策条件；有充分依据却拒答属于误拒答。"
+    },
+    "r03:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "依据知识原文核对否定、限制或政策条件；有充分依据却拒答属于误拒答。"
+    },
+    "r04:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "依据知识原文核对否定、限制或政策条件；有充分依据却拒答属于误拒答。"
+    },
+    "n01:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "不存在的商品不能给出虚构价格，也不能把未查到解释为零库存。"
+    },
+    "n02:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "保留有依据的价格库存；无资料的功能明确无法确认，不能因有商品片段就肯定未知能力。"
+    },
+    "n03:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "保留有依据的价格库存；无资料的功能明确无法确认，不能因有商品片段就肯定未知能力。"
+    },
+    "n04:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "未知商品的功能应说明资料不足；这是客服范围内的无答案问题，不应判成无关请求。"
+    },
+    "e01:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "核对目标商品与返回实体；e02 注入错实体结果，正确行为应说明无法核实，不发布其他商品数值。"
+    },
+    "e02:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search"
+      ],
+      "ordered_tools": [],
+      "notes": "核对目标商品与返回实体；e02 注入错实体结果，正确行为应说明无法核实，不发布其他商品数值。"
+    },
+    "f01:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "指定工具被注入错误、空结果或非法字段；应尝试所需查询，保留成功部分并说明缺口。故障被注入不等于流程失败。"
+    },
+    "f02:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "指定工具被注入错误、空结果或非法字段；应尝试所需查询，保留成功部分并说明缺口。故障被注入不等于流程失败。"
+    },
+    "f03:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "指定工具被注入错误、空结果或非法字段；应尝试所需查询，保留成功部分并说明缺口。故障被注入不等于流程失败。"
+    },
+    "f04:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "指定工具被注入错误、空结果或非法字段；应尝试所需查询，保留成功部分并说明缺口。故障被注入不等于流程失败。"
+    },
+    "f05:0": {
+      "expected_agents": [
+        "product"
+      ],
+      "required_tools": [
+        "catalog_search",
+        "knowledge_search"
+      ],
+      "ordered_tools": [],
+      "notes": "指定工具被注入错误、空结果或非法字段；应尝试所需查询，保留成功部分并说明缺口。故障被注入不等于流程失败。"
+    }
+  }
+}
