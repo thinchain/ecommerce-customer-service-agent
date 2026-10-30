@@ -32,7 +32,7 @@ def citation_check(reply, trace):
 def score_case(case, result):
     used={call['name'] for call in result.get('tool_calls',[]) if call['result'].get('ok')}
     expected=set(case.get('required_tools',[]))
-    routes={event['agent'] for event in result.get('agent_events',[]) if event['agent']!='supervisor'}
+    routes={event['agent'] for event in result.get('agent_events',[]) if event['agent'] not in ('supervisor','responder')}
     reply=result['reply']
     checks={'tools_correct':expected<=used and not (used & set(case.get('forbidden_tools',[]))),
             'routing_exact':routes==set(case.get('expected_agents',[])),

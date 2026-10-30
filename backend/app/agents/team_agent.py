@@ -10,6 +10,10 @@ from app.agents.policy import customer_gate, danger_reason
 from app.agents.recall import answer_history
 from app.agents.roles import SUPERVISOR_PROMPT
 from app.agents.business_reply import compose_business_reply
+from app.agents.request import resolve_request, historical_request
+from app.agents.decisions import routing_advice
+from app.agents.planned import run_planned
+import json
 from app.core.agent import Agent, AgentResult, RunContext
 from app.core.config import AgentConfig, Settings, get_settings, override_settings
 from app.core.exceptions import ModelServiceError
@@ -35,7 +39,11 @@ class LangGraphTeamAgent(Agent):
             # Admission classification and history-only execution share the same deadline.
             with override_settings(self.settings):
                 async with asyncio.timeout(self.config.timeout_seconds):
-                    return await self._execute(input_text, context)
+                    result = await self._execute(input_text, context)
+                    if self.settings.natural_response_enabled and result.verification.get('parts'):
+                        from app.agents.presentation import present_business_result
+                        result = await present_business_result(input_text, result, self.llm, self.config.context_bytes)
+                    return result
         except TimeoutError as exc:
             raise ModelServiceError(504, 'Agent 执行超时，请缩小问题范围后重试。') from exc
         except GraphRecursionError as exc:
@@ -50,38 +58,65 @@ class LangGraphTeamAgent(Agent):
         if gate['status'] == 'blocked':
             return AgentResult(reply=gate['reply'], memories=memories,
                                decision={'scope': gate}, verification={'policy': 'blocked'})
-        if gate.get('action') == 'history_only':
+        request = resolve_request(question, history) if self.settings.structured_routing else None
+        if request and request['ambiguous']:
+            return AgentResult(reply='前面涉及多个商品，请说明要查询哪个商品或订单。', memories=memories,
+                               decision={'scope': gate, 'request': request, 'execution': 'clarification'})
+        if gate.get('action') == 'history_only' or (request and history and historical_request(question)):
             reply, verification = await answer_history(question, history, self.llm, self.config.context_bytes)
             if self.settings.catalog_evidence_enabled:
-                trace = next((m.get('tool_calls', []) for m in reversed(history)
-                              if m.get('role') == 'assistant' and m.get('tool_calls')), [])
+                trace = [t for m in history if m.get('role') == 'assistant'
+                         and m.get('decision', {}).get('scope', {}).get('status') != 'blocked'
+                         for t in m.get('tool_calls', [])]
                 # Explicit current-value requests must not reuse historical observations.
                 import re
                 current = bool(re.search(r'现在|当前|重新查|最新|\b(?:current|latest|refresh)\b', question, re.I))
                 rendered = compose_business_reply(question, reply, [] if current else trace,
-                                                  historical=not current)
+                                                  historical=not current,
+                                                  target_ids=request['product_ids'] if request else None)
                 if rendered is not None:
+                    candidate = reply
                     reply, parts = rendered
                     verification = {'parts': parts, 'evidence_scope': 'current_unavailable' if current else 'historical_turn',
                                     'semantic_factuality': 'not_measured', 'invalid': []}
                     if 'catalog' in parts:
                         verification['catalog'] = parts['catalog']
+                    if self.settings.natural_response_enabled:
+                        verification['presentation_candidate'] = candidate
             if danger_reason(reply):
                 reply = '历史回顾包含不允许提供的操作内容，已阻止。'
                 verification['policy'] = 'output_blocked'
             return AgentResult(reply=reply, memories=memories,
-                               decision={'status': 'not_requested', 'scope': gate}, verification=verification)
+                               decision={'status': 'not_requested', 'scope': gate,
+                                         'request': request, 'execution': 'history_only'}, verification=verification)
+        advice = None
+        if request:
+            route_history = [m['content'] for m in history if m.get('role') == 'user'][-2:]
+            if request['product_ids']:
+                route_history.append('已验证会话商品ID：' + ', '.join(request['product_ids']))
+            advice = await routing_advice(question, history=route_history, settings=self.settings)
+            planned = await run_planned(question, request, advice, self.llm, self.executor,
+                                        self.settings, self.config, memories)
+            if planned is not None:
+                planned.decision['scope'] = gate
+                return planned
         messages = build_context(history, memories, question, budget=self.config.context_bytes,
                                  system_prompt=self.system_prompt)
+        if request:
+            messages[0]['content'] += '\n本轮服务器解析的实体与字段（不能据此猜测数值）：' + json.dumps(request, ensure_ascii=False)
         result = await self.graph.ainvoke({
             'base': messages[:2], 'history': messages[2:-1], 'current': messages[-1],
             'rounds': [], 'pending': [], 'steps': 0, 'handoffs': 0,
             'trace': [], 'events': [], 'memories': memories, 'stopped': False,
             # Carry only a uniquely verified entity, never historical numeric values.
-            'product_targets': self._recent_product_targets(history),
+            'product_targets': request['product_ids'] if request else self._recent_product_targets(history),
+            'precomputed_decision': advice,
+            'resolved_request': request,
         }, config={'recursion_limit': (self.config.max_steps + 1) * (self.config.max_calls_per_response + 2) + 5,
                    'metadata': {'run_id': context.run_id, 'session_id': context.session_id}})
         result['decision']['scope'] = gate
+        if request:
+            result['decision'].update(request=request, execution='supervisor')
         if danger_reason(result['reply']):
             result['reply'] = '回复包含不允许提供的操作内容，已阻止。请提出商品、本人订单或售后问题。'
             result['verification']['policy'] = 'output_blocked'

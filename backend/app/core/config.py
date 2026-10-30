@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     demo_user_id: str = Field(default='U00001', min_length=1, validation_alias='DEMO_USER_ID')
     commerce_tool_transport: Literal['local', 'mcp'] = Field(default='local', validation_alias='COMMERCE_TOOL_TRANSPORT')
     catalog_evidence_enabled: bool = Field(default=True, validation_alias='CATALOG_EVIDENCE_ENABLED')
+    structured_routing: bool = Field(default=True, validation_alias='STRUCTURED_ROUTING')
+    kev_direct_routing: bool = Field(default=True, validation_alias='KEV_DIRECT_ROUTING')
+    natural_response_enabled: bool = Field(default=True, validation_alias='NATURAL_RESPONSE_ENABLED')
 
     # Retrieval
     rag_backend: Literal['fts', 'chroma'] = Field(default='fts', validation_alias='RAG_BACKEND')
@@ -82,6 +85,8 @@ class Settings(BaseSettings):
     jev_api_key: SecretStr = Field(default='', validation_alias='JEV_API_KEY')
     jev_model: str = Field(default='jev-latest', min_length=1, validation_alias='JEV_MODEL')
     jev_timeout_seconds: float = Field(default=3, gt=0, validation_alias='JEV_TIMEOUT_SECONDS')
+    jev_advice_threshold: float = Field(default=.8, ge=0, le=1, validation_alias='JEV_ADVICE_THRESHOLD')
+    jev_reject_threshold: float = Field(default=.8, ge=0, le=1, validation_alias='JEV_REJECT_THRESHOLD')
 
     @field_validator('data_dir', 'memory_db_path', 'commerce_db_path', 'knowledge_db_path', 'chroma_path', mode='before')
     @classmethod

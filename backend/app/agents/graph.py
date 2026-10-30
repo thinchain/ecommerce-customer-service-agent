@@ -16,6 +16,7 @@ from app.evaluation.metrics import citation_check
 from app.agents.evidence import missing_product_evidence
 from app.agents.catalog_evidence import catalog_observation
 from app.agents.business_reply import capture_knowledge, compose_business_reply
+from app.core.execution import execution_span
 
 
 class WorkerState(TypedDict, total=False):
@@ -31,6 +32,8 @@ class WorkerState(TypedDict, total=False):
 
 
 class TeamState(TypedDict, total=False):
+    precomputed_decision: dict[str, Any] | None
+    resolved_request: dict[str, Any] | None
     product_targets: list[str]
     decision: dict[str, Any]
     verification: dict[str, Any]
@@ -63,6 +66,20 @@ def trace_item(call, result, agent, step, *, catalog_evidence_enabled=False):
 
 def build_worker(role, model, executor, *, max_steps, context_bytes, max_calls=4, settings=None):
     settings = settings or get_settings()
+    def allowed_schemas(task):
+        schemas = role_schemas(role)
+        if role == 'product' and settings.structured_routing:
+            from app.agents.request import requested_fields
+            fields = requested_fields(task)
+            allowed = set()
+            if {'price','stock'}.intersection(fields):allowed.add('catalog_search')
+            if 'knowledge' in fields:allowed.add('knowledge_search')
+            import re
+            if re.search(r'总价|合计|差价|便宜|多少倍|\d+\s*(?:件|台|个)', task):
+                allowed.add('calculator')
+            if allowed:
+                schemas = [s for s in schemas if s['function']['name'] in allowed]
+        return schemas
     async def think(state: WorkerState):
         final = state['steps'] >= max_steps or len(state['trace']) >= state['remaining']
         try:
@@ -74,7 +91,8 @@ def build_worker(role, model, executor, *, max_steps, context_bytes, max_calls=4
             attempted = {item['name'] for item in state['trace']}
             required = next((name for name in missing if name not in attempted), None)
             kwargs = {'required_tool': required} if required and not final else {}
-            answer = await model(messages, role_schemas(role), final=final, **kwargs)
+            with execution_span(role, 'model', step=state['steps'] + 1):
+                answer = await model(messages, allowed_schemas(state['task']), final=final, **kwargs)
             calls = serialize_calls(answer, max_calls)
             if final and calls:
                 raise ModelServiceError(502, '专业 Agent 在预算用尽后仍请求工具，未执行。')
@@ -94,17 +112,62 @@ def build_worker(role, model, executor, *, max_steps, context_bytes, max_calls=4
         async with ToolRuntime(settings=settings) as runtime:
             for call in state['pending']:
                 name, raw = call['function']['name'], call['function']['arguments']
+                original_raw = raw
+                if role == 'product' and settings.structured_routing:
+                    from app.agents.request import explicit_products
+                    targets = explicit_products(state['task'])
+                    try:
+                        arguments = json.loads(raw)
+                        bound = False
+                        if name == 'catalog_search' and targets and not arguments.get('product_ids') and not arguments.get('query'):
+                            arguments['product_ids'] = targets
+                            bound = True
+                        if name == 'knowledge_search' and len(targets) == 1 and not arguments.get('product_id'):
+                            arguments['product_id'] = targets[0]
+                            bound = True
+                        if bound:
+                            raw = json.dumps(arguments, ensure_ascii=False)
+                    except (ValueError, TypeError, AttributeError):
+                        pass
+                effective_call = {**call, 'function': {**call['function'], 'arguments': raw}}
                 if len(trace) >= state['remaining']:
                     result = {'ok': False, 'error': '本轮全局工具预算已用尽', 'code': 'budget_exhausted'}
                     stopped = True
-                elif name not in ROLES[role]['tools']:
+                elif name not in {s['function']['name'] for s in allowed_schemas(state['task'])}:
                     result = {'ok': False, 'error': '该 Agent 无权调用此工具', 'code': 'tool_not_allowed'}
-                    trace.append(trace_item(call, result, role, state['steps'],
+                    trace.append(trace_item(effective_call, result, role, state['steps'],
                                             catalog_evidence_enabled=settings.catalog_evidence_enabled))
                 else:
-                    result = await runtime.execute(name, raw, {}, executor)
-                    trace.append(trace_item(call, result, role, state['steps'],
-                                            catalog_evidence_enabled=settings.catalog_evidence_enabled))
+                    previous = next((t for t in reversed(trace) if t['name'] == name and t['arguments'] == raw), None)
+                    if previous and (previous['result'].get('ok') is False or previous['result'].get('result') in ([], {})):
+                        result = {'ok': False, 'error': '相同参数已失败或为空，请保留已取得的其他证据。', 'code': 'duplicate_suppressed'}
+                    else:
+                        with execution_span(role, 'tool', step=state['steps']):
+                            result = await runtime.execute(name, raw, {}, executor)
+                    entry = trace_item(effective_call, result, role, state['steps'],
+                                       catalog_evidence_enabled=settings.catalog_evidence_enabled)
+                    if raw != original_raw:
+                        entry['requested_arguments'] = original_raw
+                        entry['binding_source'] = 'validated_task_entities'
+                    trace.append(entry)
+                    # A product-QA index can be empty while the product manual has
+                    # the answer. Broaden once, record both actual SQL queries.
+                    if settings.structured_routing and name == 'knowledge_search' and len(trace) < state['remaining']:
+                        try:
+                            args = json.loads(raw)
+                        except (ValueError, TypeError):
+                            args = {}
+                        body = result.get('result')
+                        if (args.get('kind') == 'product_qa' and args.get('product_id')
+                                and result.get('ok') is True and isinstance(body, dict) and body.get('hits') == []):
+                            fallback_raw = json.dumps({**args, 'kind': 'product'}, ensure_ascii=False)
+                            fallback_call = {**call, 'function': {**call['function'], 'arguments': fallback_raw}}
+                            with execution_span(role, 'knowledge_fallback', step=state['steps']):
+                                result = await runtime.execute(name, fallback_raw, {}, executor)
+                            fallback_entry = trace_item(fallback_call,result,role,state['steps'],
+                                                        catalog_evidence_enabled=settings.catalog_evidence_enabled)
+                            fallback_entry.update(source='server_knowledge_fallback',requested_arguments=raw)
+                            trace.append(fallback_entry)
                 group.append(tool_message(call, result))
         return {'rounds': [*state['rounds'], group], 'trace': trace, 'pending': [], 'stopped': stopped}
 
@@ -178,7 +241,11 @@ def build_team_graph(model, executor, *, max_steps, worker_steps, max_handoffs, 
                for role in ROLES}
 
     async def decide(state: TeamState):
-        advice = await routing_advice(state['current']['content'], settings=settings)
+        advice = state.get('precomputed_decision')
+        if advice is None:
+            advice = await routing_advice(state['current']['content'],
+                                      history=[m['content'] for m in state['history'] if m.get('role') == 'user'][-3:],
+                                      settings=settings)
         update = {'decision': advice}
         if advice.get('advisory_accepted'):
             base = [dict(item) for item in state['base']]
@@ -200,6 +267,8 @@ def build_team_graph(model, executor, *, max_steps, worker_steps, max_handoffs, 
                 final_check = citation_check(reply, state['trace'])
                 final_check.update(missing_required_tools=check['missing_required_tools'],
                                    draft_checks=check, parts=parts)
+                if settings.natural_response_enabled:
+                    final_check['presentation_candidate'] = state['reply']
                 if 'catalog' in parts:
                     final_check['catalog'] = parts['catalog']
                 update.update(reply=reply, verification=final_check)
@@ -216,7 +285,8 @@ def build_team_graph(model, executor, *, max_steps, worker_steps, max_handoffs, 
                                                 state['rounds'], context_bytes, final)
         required = missing_product_evidence(state['current']['content'], state['trace'])
         kwargs = {'required_tool': 'delegate_product'} if required and state['steps'] == 0 and not final else {}
-        answer = await model(messages, SUPERVISOR_SCHEMAS, final=final, **kwargs)
+        with execution_span('supervisor', 'model', step=state['steps'] + 1):
+            answer = await model(messages, SUPERVISOR_SCHEMAS, final=final, **kwargs)
         calls = serialize_calls(answer, max_calls)
         if final and calls:
             raise ModelServiceError(502, '协调 Agent 在预算用尽后仍请求工具，未执行。')
@@ -287,6 +357,31 @@ def build_team_graph(model, executor, *, max_steps, worker_steps, max_handoffs, 
                 else:
                     event['task'] = task[:800]
                     if role == 'product':
+                        if settings.structured_routing:
+                            from app.agents.request import resolve_request, task_text
+                            request = state.get('resolved_request') or resolve_request(state['current']['content'], state['history'])
+                            attempted_orders = any(t['name'] == 'order_detail' for t in trace)
+                            if request['order_ids'] and not attempted_orders:
+                                if handoffs >= max_handoffs:
+                                    return finish_call(state, {'ok': False, 'error': '依赖查询需要剩余委派预算', 'code': 'budget_exhausted'},
+                                                       trace=trace, handoffs=handoffs, stopped=True,
+                                                       events=[*state['events'], {**event, 'status': 'limit'}])
+                                order_worker = await workers['orders'].ainvoke({
+                                    'task': task_text(state['current']['content'], request, 'orders'),
+                                    'rounds': [], 'pending': [], 'steps': 0,
+                                    'remaining': max_tool_calls-len(trace), 'trace': [], 'stopped': False})
+                                trace = [*trace, *order_worker['trace']]
+                                state = {**state, 'events': [*state['events'], {
+                                    'agent': 'orders', 'task': '先定位订单及真实商品ID',
+                                    'status': 'failed' if order_worker.get('error') else 'completed',
+                                    'tool_count': len(order_worker['trace']), 'source': 'dependency_guard'}]}
+                                handoffs += 1
+                            request['product_ids'] = request['product_ids'] or product_context(trace)
+                            if request['order_ids'] and not request['product_ids']:
+                                result = {'ok': False, 'error': '订单未取得授权商品，不能猜测其商品。'}
+                                return finish_call(state, result, trace=trace, handoffs=handoffs,
+                                                   events=[*state['events'], event])
+                            task = task_text(state['current']['content'], request, role)
                         ids = product_context(trace)
                         if ids:
                             task += '\n本轮订单工具实际返回的商品 ID（仅为候选，按任务选择）：' + json.dumps(ids)

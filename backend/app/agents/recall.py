@@ -5,6 +5,7 @@ from app.agents.evidence import missing_product_evidence
 from app.evaluation.metrics import citation_check
 from app.core.exceptions import ModelServiceError
 from app.core.message import model_messages
+from app.core.execution import execution_span
 
 
 HISTORY_PROMPT = '''你是电商客服的会话回顾助手。只根据本次给出的历史 JSON 回答当前问题。
@@ -19,9 +20,11 @@ assistant_text 为 null 表示原回答缺证据或被拦截，不能从该轮�
 只回答当前问题实际要求回顾的内容，不主动附带其他历史商品信息。若当前问题是新的算术、编程等无关任务，简短说明客服范围，不总结历史记录。'''
 
 
-def history_context(history, budget):
+def history_context(history, budget, question=''):
     records = []
     evidence = []
+    from app.agents.request import resolve_request
+    focus = resolve_request(question, history) if question else None
     for index in range(len(history) - 2, -1, -2):
         user, assistant = history[index:index + 2]
         if assistant.get('decision', {}).get('scope', {}).get('status') == 'blocked':
@@ -33,6 +36,12 @@ def history_context(history, budget):
             payload = result.get('result')
             if isinstance(payload, list):
                 result['result'] = payload[:5]
+                if focus and {'price', 'stock'}.intersection(focus['fields']) and call['name'] == 'catalog_search':
+                    keys = {'product_id', 'price_cents' if 'price' in focus['fields'] else '',
+                            'stock' if 'stock' in focus['fields'] else ''}
+                    result['result'] = [{k: v for k, v in p.items() if k in keys}
+                                        for p in payload if isinstance(p, dict) and
+                                        (not focus['product_ids'] or p.get('product_id') in focus['product_ids'])][:5]
                 if len(payload) > 5:
                     result['truncated'] = True
             elif isinstance(payload, dict) and isinstance(payload.get('hits'), list):
@@ -44,6 +53,13 @@ def history_context(history, budget):
             if len(json.dumps(observation, ensure_ascii=False).encode()) > 2200:
                 observation['result'] = {'ok': False, 'error': '历史证据过长，未提供完整记录', 'truncated': True}
             observations.append(observation)
+        if focus and focus['fields']:
+            wanted = ({'catalog_search'} if {'price', 'stock'}.intersection(focus['fields']) else set())
+            if 'knowledge' in focus['fields']:
+                wanted.add('knowledge_search')
+            observations = [o for o in observations if o['name'] in wanted]
+            if not observations:
+                continue
         invalid = assistant.get('verification', {}).get('invalid') or assistant.get('verification', {}).get('missing_required_tools')
         missing = missing_product_evidence(user['content'], trace)
         row = {'question': user['content'][:800],
@@ -58,6 +74,8 @@ def history_context(history, budget):
             break
         records = candidate
         evidence = [*observations, *evidence]
+        if focus and focus['fields'] and observations:
+            break
     return records, evidence
 
 
@@ -67,13 +85,14 @@ async def answer_history(question, history, model, budget):
     reserve = len((HISTORY_PROMPT + question).encode()) + 500
     if budget - reserve < 1000:
         raise ModelServiceError(422, '回顾问题过长，请缩短问题或缩小历史范围。')
-    records, evidence = history_context(history, budget - reserve)
+    records, evidence = history_context(history, budget - reserve, question)
     if not records:
         return '本会话没有可用于回答此问题的历史记录。', {**citation_check('', []), 'evidence_scope': 'historical_turn'}
     messages = [{'role': 'system', 'content': HISTORY_PROMPT},
                 {'role': 'user', 'content': '以下是当前会话可用的历史记录（可能仅包含最近部分）：\n' + json.dumps(records, ensure_ascii=False)},
                 {'role': 'user', 'content': question}]
-    answer = await model(model_messages(messages), [], final=True)
+    with execution_span('history', 'model'):
+        answer = await model(model_messages(messages), [], final=True)
     if answer.tool_calls:
         raise ModelServiceError(502, '历史回顾不允许调用工具，未执行该请求。')
     reply = (answer.content or '').strip()
