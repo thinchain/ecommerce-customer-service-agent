@@ -18,9 +18,3 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci && npm run build
         working-directory: frontend
-      - run: docker compose config --quiet
-      - run: docker compose build
-      - run: docker compose up -d --wait --wait-timeout 180
-      - run: curl --fail http://127.0.0.1:3000/api/commerce/overview
-      - if: always()
-        run: docker compose logs && docker compose down -v

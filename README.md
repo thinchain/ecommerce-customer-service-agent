@@ -6,7 +6,7 @@
 
 - **Agent 协作**：协调 Agent 按需串行委派订单、商品两个 ReAct 子图，按角色限制工具权限。
 - **业务查询与知识检索**：使用 SQLite 查询订单、价格和库存，通过 FTS5 / BM25 检索商品资料与政策，保留知识来源和引用。
-- **回答校验**：价格库存由服务端根据工具证据校验并渲染；混合咨询中保留已成功查询的部分，说明缺失信息。
+- **回答校验与表达**：服务端校验价格库存、商品绑定和引用，模型依据证据组织简洁答复；混合咨询中保留已成功查询的部分，说明缺失信息。
 - **运行支持**：提供会话记忆、执行预算、超时与有限重试，业务工具支持本地调用或 MCP stdio。
 
 项目使用合成业务数据和固定演示用户，业务工具仅提供查询，不执行下单、支付或退款。尚未接入真实用户认证，适合本地演示与开发。
@@ -41,8 +41,10 @@ QWEN_MODEL=qwen3.5-4b
 ```bash
 PYTHONPATH=backend:. python scripts/generate_mock_data.py
 PYTHONPATH=backend:. python scripts/ingest_knowledge.py fixtures/knowledge/demo.jsonl
-python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+python backend/run.py
 ```
+
+默认启动 `127.0.0.1:8000` 并启用热重载。地址、端口可在 `.env` 中通过 `API_HOST`、`API_PORT` 配置，也可使用命令行参数覆盖，例如 `python backend/run.py --port 8080 --no-reload`。在 `backend/` 目录下可直接执行 `python run.py`。
 
 数据目录通过 `.env` 中的 `DATA_DIR` 配置，默认使用项目内的 `data/`；各数据库也可单独配置，见 `.env.example`。相对路径以项目根目录为基准，自定义私有目录请放在仓库外或加入忽略规则。
 
@@ -76,6 +78,8 @@ python -B scripts/test_offline.py
 ```
 
 离线测试使用临时数据库和 Mock 模型，无需 GPU 或模型服务；测试通过不代表真实模型的回答准确率。
+
+已部署 Qwen/Kev 时，可用 `scripts/evaluate_workflow.py` 运行真实模型的多轮、记忆和低风险越界测试；运行命令与结果字段见 [真实模型评测](docs/workflow-evaluation.md)。
 
 ## 许可证
 

@@ -10,7 +10,6 @@ Shell 配置优先；应用 Settings 读取 `.env`，模型脚本的本地 profi
 
 源码、依赖清单、锁文件、测试、合成 fixtures、通用文档和部署模板可以公开。
 模型权重、数据库、历史会话、依赖目录、构建产物、原始报告和个人笔记默认忽略。
-`.dockerignore` 独立阻止这些文件进入构建上下文；它不替代 Git 忽略规则。
 
 ## 报告
 
@@ -61,6 +60,5 @@ python3 -B /tmp/ecommerce-agent-public/scripts/check_public_files.py
 ## CI
 
 CI 运行公开文件检查、隔离离线测试及前端构建，不应依赖个人模型路径或 GPU。
-不要将 `.env` 作为 CI artifact，也不要打印环境变量、完整 Compose 展开结果或模型请求认证头。
-现有 workflow 的 `docker compose config --quiet` 只验证结构；容器构建/启动会在 CI 环境执行。
+不要将 `.env` 作为 CI artifact，也不要打印环境变量、含凭据的配置展开结果或模型请求认证头。
 真实模型评测和 GPU 服务启动需人工确认资源与授权，不能自动接入普通 PR 流程。
