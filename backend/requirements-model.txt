@@ -1,0 +1,8 @@
+# Separate Linux/CUDA model environment, Python 3.12.
+vllm==0.29.0
+torch==2.13.0
+transformers==5.10.4
+peft==0.20.0
+huggingface-hub==1.33.0
+safetensors==0.8.0
+vllm-jev @ git+https://github.com/mode-io/vllm-jev.git@eae6b2d6dd06fb014118c99f660261cf4ecf04f9
