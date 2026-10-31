@@ -7,7 +7,7 @@
 !.env.example
 
 # Dependencies and caches
-.venv/
+.venv*/
 venv/
 node_modules/
 __pycache__/
